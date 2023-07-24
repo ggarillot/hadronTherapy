@@ -14,11 +14,17 @@ void EventAction::BeginOfEventAction(const G4Event*) {}
 void EventAction::EndOfEventAction(const G4Event* event)
 {
     auto rootWriter = runAction->getRootWriter();
-    rootWriter->fillTree(event->GetEventID(), idVec, zVec, timeVec);
+    rootWriter->fillTree(event->GetEventID(), idVec, zVec, timeVec, pdgEscapingVec, posEscapingVec, momEscapingVec,
+                         eEscapingVec);
 
     idVec.clear();
     zVec.clear();
     timeVec.clear();
+
+    pdgEscapingVec.clear();
+    posEscapingVec.clear();
+    momEscapingVec.clear();
+    eEscapingVec.clear();
 
     nEventsElapsed++;
     runAction->update(nEventsElapsed);
@@ -29,6 +35,14 @@ void EventAction::addParticle(G4int Z, G4double z, G4double t)
     idVec.push_back(Z);
     zVec.push_back(z);
     timeVec.push_back(t);
+}
+
+void EventAction::addEscapingParticle(G4int pdg, G4ThreeVector pos, G4ThreeVector mom, G4double e)
+{
+    pdgEscapingVec.push_back(pdg);
+    posEscapingVec.push_back(pos);
+    momEscapingVec.push_back(mom);
+    eEscapingVec.push_back(e);
 }
 
 void EventAction::primaryEnd(G4ThreeVector end)

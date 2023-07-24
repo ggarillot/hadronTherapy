@@ -1,4 +1,5 @@
 #include "SteppingAction.h"
+#include "EventAction.h"
 
 #include <CLHEP/Random/Random.h>
 #include <CLHEP/Units/SystemOfUnits.h>
@@ -8,21 +9,44 @@
 #include <G4Step.hh>
 #include <G4SystemOfUnits.hh>
 
+SteppingAction::SteppingAction(EventAction* ea)
+    : eventAction(ea)
+{
+}
+
 void SteppingAction::UserSteppingAction(const G4Step* step)
 {
-    const auto logicalVolume = step->GetPreStepPoint()->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
-    const auto name = logicalVolume->GetName();
+    // if the step is exiting the world we don't cares
+    if (!step->GetTrack()->GetNextVolume())
+        return;
 
-    if (name == "Body" /*&& step->GetTrack()->GetTrackID() == 1*/)
+    const auto preStepPoint = step->GetPreStepPoint();
+    const auto postStepPoint = step->GetPostStepPoint();
+
+    const auto preLogicalVolume = preStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
+    const auto postLogicalVolume = postStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
+
+    const auto preName = preLogicalVolume->GetName();
+    const auto postName = postLogicalVolume->GetName();
+
+    if (preName == "Body" /*&& step->GetTrack()->GetTrackID() == 1*/)
+    {
         HandleBeamInBody(step);
+        return;
+    }
 
-    // if (name != "Barrel" && /*name != "FrontCap" &&*/ name != "EndCap")
-    //     return;
+    if (preName != "World")
+        return;
 
-    // const auto pdg = step->GetTrack()->GetDefinition()->GetPDGEncoding();
-    // const auto energy = step->GetPreStepPoint()->GetTotalEnergy();
-    // const auto pos = step->GetPreStepPoint()->GetPosition();
-    // const auto mom = step->GetPreStepPoint()->GetMomentumDirection();
+    if (postName == "Barrel" || postName == "EndCap")
+    {
+        const auto pdg = step->GetTrack()->GetDefinition()->GetPDGEncoding();
+        const auto energy = step->GetPreStepPoint()->GetTotalEnergy() / MeV;
+        const auto pos = postStepPoint->GetPosition();
+        const auto mom = postStepPoint->GetMomentumDirection();
+
+        eventAction->addEscapingParticle(pdg, pos, mom, energy);
+    }
 
     // G4cout << name << " - " << pdg << " : " << energy / keV << " keV" << G4endl;
 }

@@ -24,7 +24,6 @@ PhysicsList::PhysicsList()
     physVec.push_back(new G4DecayPhysics(verboseLevel));
     physVec.push_back(new G4EmStandardPhysics_option4(verboseLevel));
 
-    physVec.push_back(new G4DecayPhysics(verboseLevel));
     physVec.push_back(new G4RadioactiveDecayPhysics(verboseLevel));
     physVec.push_back(new G4IonBinaryCascadePhysics(verboseLevel));
     physVec.push_back(new G4EmExtraPhysics(verboseLevel));

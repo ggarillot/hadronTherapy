@@ -21,6 +21,7 @@ class EventAction : public G4UserEventAction
     void EndOfEventAction(const G4Event* event) override;
 
     void addParticle(G4int Z, G4double z, G4double time);
+    void addEscapingParticle(G4int pdg, G4ThreeVector pos, G4ThreeVector mom, G4double e);
 
     void primaryEnd(G4ThreeVector end);
 
@@ -32,4 +33,9 @@ class EventAction : public G4UserEventAction
     std::vector<G4int>    idVec{};
     std::vector<G4double> zVec{};
     std::vector<G4double> timeVec{};
+
+    std::vector<G4int>         pdgEscapingVec{};
+    std::vector<G4ThreeVector> posEscapingVec{};
+    std::vector<G4ThreeVector> momEscapingVec{};
+    std::vector<G4double>      eEscapingVec{};
 };

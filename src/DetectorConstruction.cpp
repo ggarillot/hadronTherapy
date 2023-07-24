@@ -10,9 +10,15 @@
 #include <G4VPhysicalVolume.hh>
 #include <stdexcept>
 
-DetectorConstruction::DetectorConstruction(const G4String& bodyMaterialStr)
+DetectorConstruction::DetectorConstruction(const G4double bWidth, const G4String& bodyMaterialStr)
 {
     G4cout << "Body is " << bodyMaterialStr << G4endl;
+    G4cout << "Body width : " << bWidth / CLHEP::cm << " cm" << G4endl;
+
+    if (bWidth < 0)
+        throw;
+
+    bodyWidth = bWidth;
 
     if (bodyMaterialStr == "waterGel")
         bodyMaterialType = kWaterGel;
@@ -54,7 +60,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4double worldSizeXY = 5 * m;
     G4double worldSizeZ = 5 * m;
     G4double bodyLength = 180 * cm;
-    G4double bodyWidth = 50 * cm;
+
+    // G4double bodyWidth = 20 * cm;
 
     auto solidWorld = new G4Box("World", 0.5 * worldSizeXY, 0.5 * worldSizeXY, 0.5 * worldSizeZ);
 
@@ -69,7 +76,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                        0,          // copy number
                                        true);      // overlaps checking
 
-    auto solidBody = new G4Tubs("Body", 0, 0.5 * bodyWidth, 0.5 * bodyLength, 0 * deg, 360 * deg);
+    auto solidBody = new G4Tubs("Body", 0, bodyWidth, 0.5 * bodyLength, 0 * deg, 360 * deg);
     auto logicBody = new G4LogicalVolume(solidBody, bodyMaterial, "Body");
     // auto physBody =
     new G4PVPlacement(nullptr, {0, 0, 0.5 * bodyLength}, logicBody, "Body", logicWorld, false, 0, true);

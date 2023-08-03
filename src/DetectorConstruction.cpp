@@ -11,19 +11,18 @@
 #include <stdexcept>
 
 DetectorConstruction::DetectorConstruction(const G4double bWidth, const G4String& bodyMaterialStr)
+    : bodyWidth(bWidth)
 {
-    G4cout << "Body is " << bodyMaterialStr << G4endl;
-    G4cout << "Body width : " << bWidth / CLHEP::cm << " cm" << G4endl;
-
-    if (bWidth < 0)
+    if (bodyWidth < 0)
         throw;
-
-    bodyWidth = bWidth;
 
     if (bodyMaterialStr == "waterGel")
         bodyMaterialType = kWaterGel;
     else
         bodyMaterialType = kWater;
+
+    G4cout << "Body is " << bodyMaterialStr << G4endl;
+    G4cout << "Body width : " << bodyWidth / CLHEP::cm << " cm" << G4endl;
 }
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
@@ -85,21 +84,21 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4double spaceAround = 20 * cm;
     G4double thickness = 1 * mm;
 
-    auto solidBarrel = new G4Tubs("Barrel", 0.5 * bodyWidth + spaceAround, 0.5 * bodyWidth + spaceAround + 1 * mm,
+    auto solidBarrel = new G4Tubs("Barrel", bodyWidth + spaceAround, bodyWidth + spaceAround + thickness,
                                   0.5 * bodyLength + spaceAround, 0 * deg, 360 * deg);
     auto logicBarrel = new G4LogicalVolume(solidBarrel, air, "Barrel");
     // auto physBarrel =
     new G4PVPlacement(nullptr, {0, 0, 0.5 * bodyLength}, logicBarrel, "Barrel", logicWorld, false, 0, true);
 
     auto solidFrontCap =
-        new G4Tubs("FrontCap", 0, 0.5 * bodyWidth + spaceAround + thickness, 0.5 * thickness, 0 * deg, 360 * deg);
+        new G4Tubs("FrontCap", 0, bodyWidth + spaceAround + thickness, 0.5 * thickness, 0 * deg, 360 * deg);
     auto logicFrontCap = new G4LogicalVolume(solidFrontCap, air, "FrontCap");
     // auto physFrontCap =
     new G4PVPlacement(nullptr, {0, 0, -spaceAround - 0.5 * thickness}, logicFrontCap, "FrontCap", logicWorld, false, 0,
                       true);
 
     auto solidEndCap =
-        new G4Tubs("EndCap", 0, 0.5 * bodyWidth + spaceAround + thickness, 0.5 * thickness, 0 * deg, 360 * deg);
+        new G4Tubs("EndCap", 0, bodyWidth + spaceAround + thickness, 0.5 * thickness, 0 * deg, 360 * deg);
     auto logicEndCap = new G4LogicalVolume(solidEndCap, air, "EndCap");
     // auto physEndCap =
     new G4PVPlacement(nullptr, {0, 0, bodyLength + spaceAround + 0.5 * thickness}, logicEndCap, "EndCap", logicWorld,

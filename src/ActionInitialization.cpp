@@ -5,6 +5,7 @@
 #include "RunAction.h"
 #include "SteppingAction.h"
 #include "TrackingAction.h"
+#include <CLHEP/Units/SystemOfUnits.h>
 #include <stdexcept>
 #include <string>
 
@@ -19,7 +20,7 @@ ActionInitialization::ActionInitialization(G4String p, G4String b, G4int s)
 
     baseRootFileName = particleName + "_" + b + "_" + std::to_string(seed);
 
-    beamEnergy = stod(b);
+    beamEnergy = stod(b) * CLHEP::MeV;
 }
 
 void ActionInitialization::BuildForMaster() const
@@ -30,7 +31,6 @@ void ActionInitialization::BuildForMaster() const
 
 void ActionInitialization::Build() const
 {
-
     SetUserAction(new PrimaryGeneratorAction(particleName, beamEnergy));
 
     RunAction* runAction = new RunAction(baseRootFileName);

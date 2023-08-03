@@ -3,6 +3,7 @@
 #include "DetectorConstruction.h"
 #include "PhysicsList.h"
 
+#include <CLHEP/Units/SystemOfUnits.h>
 #include <TROOT.h>
 
 #include <G4RunManagerFactory.hh>
@@ -25,6 +26,7 @@ int main(int argc, char** argv)
     G4int    seed{};
     G4int    nEvents{};
     G4String bodyMaterial{};
+    G4double bodyWidth{};
     G4int    nThreads{};
 
     app.add_option("-N", particleName, "name of the beam particle : proton or carbon")->required();
@@ -32,12 +34,10 @@ int main(int argc, char** argv)
     app.add_option("-s", seed, "seed")->required();
     app.add_option("-n", nEvents, "number of events")->required();
     app.add_option("-m", bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
+    app.add_option("-b", bodyWidth, "body width in cm")->default_val(20);
     app.add_option("-t", nThreads, "number of threads")->default_val(1);
 
     CLI11_PARSE(app, argc, argv);
-
-    // G4UIExecutive* ui = nullptr;
-    // ui = new G4UIExecutive(argc, argv);
 
     ROOT::EnableThreadSafety();
 
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::MT);
     runManager->SetNumberOfThreads(nThreads);
 
-    runManager->SetUserInitialization(new DetectorConstruction(bodyMaterial));
+    runManager->SetUserInitialization(new DetectorConstruction(bodyWidth * CLHEP::cm, bodyMaterial));
 
     // G4VModularPhysicsList* phys = new QGSP_BIC_HP;
     G4VModularPhysicsList* phys = new PhysicsList;
@@ -56,43 +56,8 @@ int main(int argc, char** argv)
     // User action initialization
     runManager->SetUserInitialization(new ActionInitialization(particleName, beamEnergyStr, seed));
 
-    // // Initialize visualization
-    // //
-    // G4VisManager* visManager = new G4VisExecutive;
-
-    // // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
-    // // G4VisManager* visManager = new G4VisExecutive("Quiet");
-    // visManager->Initialize();
-
-    // // Get the pointer to the User Interface manager
-    // G4UImanager* UImanager = G4UImanager::GetUIpointer();
-
-    // // Process macro or start UI session
-    // //
-
-    // if (!ui)
-    // {
-    //     // batch mode
-    //     G4String command = "/control/execute ";
-    //     G4String fileName = argv[1];
-    //     UImanager->ApplyCommand(command + fileName);
-    // }
-    // else
-    // {
-    //     // interactive mode
-    //     UImanager->ApplyCommand("/control/execute init_vis.mac");
-    //     ui->SessionStart();
-    //     delete ui;
-    // }
-
-    // Job termination
-    // Free the store: user actions, physics_list and detector_description are
-    // owned and deleted by the run manager, so they should not be deleted
-    // in the main() program !
-
     runManager->Initialize();
     runManager->BeamOn(nEvents);
 
-    // delete visManager;
     delete runManager;
 }

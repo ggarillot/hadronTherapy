@@ -5,9 +5,11 @@
 #include <G4RunManager.hh>
 
 #include <chrono>
+#include <cstdlib>
 #include <ctime>
 #include <mutex>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -104,6 +106,14 @@ void RunAction::EndOfRunAction(const G4Run*)
         G4cout << nProcessedEventsGlobal << " events processed in " << totalTime.count() << " s" << G4endl;
 
         printingThread.join();
+
+        std::stringstream haddCmd;
+        haddCmd << "hadd -f " << baseRootFileName << ".root " << baseRootFileName << "_T*";
+        system(haddCmd.str().c_str());
+
+        std::stringstream cleanCmd;
+        cleanCmd << "rm " << baseRootFileName << "_T*";
+        system(cleanCmd.str().c_str());
     }
     else if (type == G4RunManager::workerRM)
     {

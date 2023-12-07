@@ -12,7 +12,7 @@ TrackingAction::TrackingAction(EventAction* ea)
 {
 }
 
-void TrackingAction::PreUserTrackingAction(const G4Track*)
+void TrackingAction::PreUserTrackingAction(const G4Track* track)
 {
     // const auto particleDef = track->GetParticleDefinition();
 
@@ -28,6 +28,8 @@ void TrackingAction::PreUserTrackingAction(const G4Track*)
     //     eventAction->addParticle(7, z);
     // else if (id == 1000080150)
     //     eventAction->addParticle(8, z);
+
+    eventAction->addInitialPosition(track);
 }
 
 void TrackingAction::PostUserTrackingAction(const G4Track* track)

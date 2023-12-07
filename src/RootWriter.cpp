@@ -48,10 +48,14 @@ void RootWriter::createHistograms()
     tree->Branch("xEscaping", &xEscaping);
     tree->Branch("yEscaping", &yEscaping);
     tree->Branch("zEscaping", &zEscaping);
-    tree->Branch("xMomEscaping", &xMomEscaping);
-    tree->Branch("yMomEscaping", &yMomEscaping);
-    tree->Branch("zMomEscaping", &zMomEscaping);
+    tree->Branch("thetaEscaping", &thetaEscaping);
+    tree->Branch("phiEscaping", &phiEscaping);
     tree->Branch("eEscaping", &eEscaping);
+    tree->Branch("timeEscaping", &timeEscaping);
+
+    tree->Branch("initialX", &initialX);
+    tree->Branch("initialY", &initialY);
+    tree->Branch("initialZ", &initialZ);
 }
 
 void RootWriter::fillHisto(double _z, double dE)
@@ -71,7 +75,9 @@ void RootWriter::fillTree(const G4int                       eID,
                           const std::vector<G4int>&         pdgVec,
                           const std::vector<G4ThreeVector>& posVec,
                           const std::vector<G4ThreeVector>& momVec,
-                          const std::vector<G4double>&      eVec)
+                          const std::vector<G4double>&      eVec,
+                          const std::vector<G4double>&      timeVec,
+                          const std::vector<G4ThreeVector>  initPosVec)
 {
     eventID = eID;
     idVec = id;
@@ -83,10 +89,15 @@ void RootWriter::fillTree(const G4int                       eID,
     xEscaping.clear();
     yEscaping.clear();
     zEscaping.clear();
-    xMomEscaping.clear();
-    yMomEscaping.clear();
-    zMomEscaping.clear();
+    thetaEscaping.clear();
+    phiEscaping.clear();
+
+    initialX.clear();
+    initialY.clear();
+    initialZ.clear();
+
     eEscaping = eVec;
+    timeEscaping = timeVec;
 
     for (const auto& pos : posVec)
     {
@@ -97,9 +108,15 @@ void RootWriter::fillTree(const G4int                       eID,
 
     for (const auto& mom : momVec)
     {
-        xMomEscaping.push_back(mom.x());
-        yMomEscaping.push_back(mom.y());
-        zMomEscaping.push_back(mom.z());
+        thetaEscaping.push_back(mom.theta());
+        phiEscaping.push_back(mom.phi());
+    }
+
+    for (const auto& initPos : initPosVec)
+    {
+        initialX.push_back(initPos.x());
+        initialY.push_back(initPos.y());
+        initialZ.push_back(initPos.z());
     }
 
     tree->Fill();

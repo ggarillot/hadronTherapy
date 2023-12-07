@@ -24,7 +24,9 @@ class RootWriter
                   const std::vector<G4int>&         pdgVec,
                   const std::vector<G4ThreeVector>& posVec,
                   const std::vector<G4ThreeVector>& momVec,
-                  const std::vector<G4double>&      eVec);
+                  const std::vector<G4double>&      eVec,
+                  const std::vector<G4double>&      timeVec,
+                  const std::vector<G4ThreeVector>  initPosVec);
 
   protected:
     void createHistograms();
@@ -44,10 +46,14 @@ class RootWriter
     std::vector<double> xEscaping{};
     std::vector<double> yEscaping{};
     std::vector<double> zEscaping{};
-    std::vector<double> xMomEscaping{};
-    std::vector<double> yMomEscaping{};
-    std::vector<double> zMomEscaping{};
+    std::vector<double> thetaEscaping{};
+    std::vector<double> phiEscaping{};
     std::vector<double> eEscaping{};
+    std::vector<double> timeEscaping{};
+
+    std::vector<double> initialX{};
+    std::vector<double> initialY{};
+    std::vector<double> initialZ{};
 
     TH1D* histo = nullptr;
     TH1D* histoPrimaryEnd = nullptr;

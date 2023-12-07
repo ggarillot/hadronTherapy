@@ -20,6 +20,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     if (!step->GetTrack()->GetNextVolume())
         return;
 
+    const auto trackID = step->GetTrack()->GetTrackID();
+
     const auto preStepPoint = step->GetPreStepPoint();
     const auto postStepPoint = step->GetPostStepPoint();
 
@@ -41,11 +43,14 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     if (postName == "Barrel" || postName == "EndCap")
     {
         const auto pdg = step->GetTrack()->GetDefinition()->GetPDGEncoding();
-        const auto energy = step->GetPreStepPoint()->GetTotalEnergy() / MeV;
-        const auto pos = postStepPoint->GetPosition();
+        const auto energy = step->GetPreStepPoint()->GetTotalEnergy() / CLHEP::MeV;
+        const auto pos = postStepPoint->GetPosition() / CLHEP::mm;
         const auto mom = postStepPoint->GetMomentumDirection();
+        const auto time = postStepPoint->GetGlobalTime() / CLHEP::second;
 
-        eventAction->addEscapingParticle(pdg, pos, mom, energy);
+        const auto initialPosition = eventAction->getInitialPosition(trackID);
+
+        eventAction->addEscapingParticle(pdg, pos, mom, energy, time, initialPosition);
     }
 
     // G4cout << name << " - " << pdg << " : " << energy / keV << " keV" << G4endl;

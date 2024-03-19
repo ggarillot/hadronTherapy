@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     app.add_option("-s", seed, "seed")->required();
     // app.add_option("-n", nEvents, "number of events")->required();
     app.add_option("-m", bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
-    app.add_option("-b", bodyWidth, "body width in cm")->default_val(20);
+    app.add_option("-b", bodyWidth, "body width in cm")->default_val(10);
     // app.add_option("-t", nThreads, "number of threads")->default_val(1);
 
     CLI11_PARSE(app, argc, argv);

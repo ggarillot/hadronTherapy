@@ -1,7 +1,10 @@
 #include "RootWriter.h"
+#include "TrackInformation.h"
 
 #include <CLHEP/Units/SystemOfUnits.h>
 #include <G4LogicalVolumeStore.hh>
+#include <G4Step.hh>
+#include <G4Track.hh>
 
 #include <TFile.h>
 #include <TH1D.h>
@@ -22,9 +25,10 @@ void RootWriter::openRootFile(const G4String& name)
 void RootWriter::closeRootFile()
 {
     histo->Write();
-    histoPrimaryEnd->Write();
 
     tree->Write();
+
+    detectorTree->Write();
 
     rootFile->Close();
     delete rootFile;
@@ -35,27 +39,49 @@ void RootWriter::createHistograms()
     rootFile->cd();
 
     histo = new TH1D("histo", ";;", 10000, 0, 1800);
-    histoPrimaryEnd = new TH1D("histoPrimaryEnd", ";;", 10000, 0, 1800);
 
     tree = new TTree("tree", "tree");
 
     tree->Branch("eventID", &eventID);
+    tree->Branch("primaryEndX", &primaryEndX);
+    tree->Branch("primaryEndY", &primaryEndY);
+    tree->Branch("primaryEndZ", &primaryEndZ);
+
     tree->Branch("id", &idVec);
     tree->Branch("z", &zVec);
     tree->Branch("t", &tVec);
 
-    tree->Branch("pdgEscaping", &pdgEscaping);
-    tree->Branch("xEscaping", &xEscaping);
-    tree->Branch("yEscaping", &yEscaping);
-    tree->Branch("zEscaping", &zEscaping);
-    tree->Branch("thetaEscaping", &thetaEscaping);
-    tree->Branch("phiEscaping", &phiEscaping);
-    tree->Branch("eEscaping", &eEscaping);
-    tree->Branch("timeEscaping", &timeEscaping);
+    tree->Branch("pdgEsc", &pdgEscaping);
+    tree->Branch("xEsc", &xEscaping);
+    tree->Branch("yEsc", &yEscaping);
+    tree->Branch("zEsc", &zEscaping);
+    tree->Branch("thetaEsc", &thetaEscaping);
+    tree->Branch("phiEsc", &phiEscaping);
+    tree->Branch("eEsc", &eEscaping);
+    tree->Branch("timeEsc", &timeEscaping);
 
-    tree->Branch("initialX", &initialX);
-    tree->Branch("initialY", &initialY);
-    tree->Branch("initialZ", &initialZ);
+    tree->Branch("initialXEsc", &initialXEscaping);
+    tree->Branch("initialYEsc", &initialYEscaping);
+    tree->Branch("initialZEsc", &initialZEscaping);
+    tree->Branch("parentEsc", &parentEscaping);
+
+    detectorTree = new TTree("detector", "detector");
+
+    detectorTree->Branch("PDG", &detected_PDG);
+    detectorTree->Branch("y1", &detected_Y1);
+    detectorTree->Branch("z1", &detected_Z1);
+    detectorTree->Branch("y2", &detected_Y2);
+    detectorTree->Branch("z2", &detected_Z2);
+    detectorTree->Branch("initX", &detected_initX);
+    detectorTree->Branch("initY", &detected_initY);
+    detectorTree->Branch("initZ", &detected_initZ);
+    detectorTree->Branch("time", &detected_time);
+    detectorTree->Branch("energy", &detected_energy);
+}
+
+void RootWriter::setEventNumber(const G4int eventNumber)
+{
+    eventID = eventNumber;
 }
 
 void RootWriter::fillHisto(double _z, double dE)
@@ -63,61 +89,99 @@ void RootWriter::fillHisto(double _z, double dE)
     histo->Fill(_z, dE);
 }
 
-void RootWriter::fillPrimaryEnd(double _z)
+void RootWriter::setPrimaryEnd(const G4ThreeVector pos)
 {
-    histoPrimaryEnd->Fill(_z);
+    primaryEndX = pos.x();
+    primaryEndY = pos.y();
+    primaryEndZ = pos.z();
 }
 
-void RootWriter::fillTree(const G4int                       eID,
-                          const std::vector<G4int>&         id,
-                          const std::vector<G4double>&      z,
-                          const std::vector<G4double>&      t,
-                          const std::vector<G4int>&         pdgVec,
-                          const std::vector<G4ThreeVector>& posVec,
-                          const std::vector<G4ThreeVector>& momVec,
-                          const std::vector<G4double>&      eVec,
-                          const std::vector<G4double>&      timeVec,
-                          const std::vector<G4ThreeVector>  initPosVec)
+void RootWriter::addPositronEmitter(const G4int Z, const G4double z, const G4double time)
 {
-    eventID = eID;
-    idVec = id;
-    zVec = z;
-    tVec = t;
+    idVec.push_back(Z);
+    zVec.push_back(z);
+    tVec.push_back(time);
+}
 
-    pdgEscaping = pdgVec;
+void RootWriter::addEscapingParticle(const G4Step* step)
+{
+    const auto postStepPoint = step->GetPostStepPoint();
 
+    const auto pdg = step->GetTrack()->GetDefinition()->GetPDGEncoding();
+    const auto energy = step->GetPreStepPoint()->GetTotalEnergy() / CLHEP::MeV;
+    const auto pos = postStepPoint->GetPosition() / CLHEP::mm;
+    const auto mom = postStepPoint->GetMomentumDirection();
+    const auto time = postStepPoint->GetGlobalTime() / CLHEP::second;
+
+    pdgEscaping.push_back(pdg);
+    eEscaping.push_back(energy);
+    timeEscaping.push_back(time);
+
+    xEscaping.push_back(pos.x());
+    yEscaping.push_back(pos.y());
+    zEscaping.push_back(pos.z());
+
+    thetaEscaping.push_back(mom.theta());
+    phiEscaping.push_back(mom.phi());
+
+    const auto trackInfo = dynamic_cast<const TrackInformation*>(step->GetTrack()->GetUserInformation());
+
+    const auto initialPosition = trackInfo->initialPosition / CLHEP::mm;
+
+    initialXEscaping.push_back(initialPosition.x());
+    initialYEscaping.push_back(initialPosition.y());
+    initialZEscaping.push_back(initialPosition.z());
+
+    const auto parentParticleDefinition = trackInfo->parentParticleDefinition;
+    if (parentParticleDefinition)
+        parentEscaping.push_back(parentParticleDefinition->GetPDGEncoding());
+    else
+        parentEscaping.push_back(0);
+}
+
+void RootWriter::addDetectedParticle(const G4Step* step)
+{
+    const auto trackInfo = dynamic_cast<const TrackInformation*>(step->GetTrack()->GetUserInformation());
+    const auto postStepPoint = step->GetPostStepPoint();
+
+    const auto detectedPosition1 = trackInfo->detected1.value() / CLHEP::mm;
+    const auto detectedPosition2 = trackInfo->detected2.value() / CLHEP::mm;
+
+    detected_PDG = step->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
+    detected_Y1 = detectedPosition1.y();
+    detected_Z1 = detectedPosition1.z();
+    detected_Y2 = detectedPosition2.y();
+    detected_Z2 = detectedPosition2.z();
+
+    const auto initialPosition = trackInfo->initialPosition / CLHEP::mm;
+
+    detected_initX = initialPosition.x();
+    detected_initY = initialPosition.y();
+    detected_initZ = initialPosition.z();
+
+    detected_time = postStepPoint->GetGlobalTime() / CLHEP::second;
+    detected_energy = postStepPoint->GetTotalEnergy();
+
+    detectorTree->Fill();
+}
+
+void RootWriter::fillTree()
+{
+    tree->Fill();
+
+    idVec.clear();
+    zVec.clear();
+    tVec.clear();
+    pdgEscaping.clear();
     xEscaping.clear();
     yEscaping.clear();
     zEscaping.clear();
     thetaEscaping.clear();
     phiEscaping.clear();
-
-    initialX.clear();
-    initialY.clear();
-    initialZ.clear();
-
-    eEscaping = eVec;
-    timeEscaping = timeVec;
-
-    for (const auto& pos : posVec)
-    {
-        xEscaping.push_back(pos.x());
-        yEscaping.push_back(pos.y());
-        zEscaping.push_back(pos.z());
-    }
-
-    for (const auto& mom : momVec)
-    {
-        thetaEscaping.push_back(mom.theta());
-        phiEscaping.push_back(mom.phi());
-    }
-
-    for (const auto& initPos : initPosVec)
-    {
-        initialX.push_back(initPos.x());
-        initialY.push_back(initPos.y());
-        initialZ.push_back(initPos.z());
-    }
-
-    tree->Fill();
+    eEscaping.clear();
+    timeEscaping.clear();
+    initialXEscaping.clear();
+    initialYEscaping.clear();
+    initialZEscaping.clear();
+    parentEscaping.clear();
 }

@@ -52,15 +52,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     }
 
     auto air = nist->FindOrBuildMaterial("G4_AIR");
+    auto galactic = nist->FindOrBuildMaterial("G4_Galactic");
 
     //
     // World
     //
     G4double worldSizeXY = 5 * m;
     G4double worldSizeZ = 5 * m;
-    G4double bodyLength = 180 * cm;
-
-    // G4double bodyWidth = 20 * cm;
+    G4double bodyLength = 100 * cm;
 
     auto solidWorld = new G4Box("World", 0.5 * worldSizeXY, 0.5 * worldSizeXY, 0.5 * worldSizeZ);
 
@@ -81,28 +80,46 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     new G4PVPlacement(nullptr, {0, 0, 0.5 * bodyLength}, logicBody, "Body", logicWorld, false, 0, true);
 
     // for stepping
-    G4double spaceAround = 20 * cm;
-    G4double thickness = 1 * mm;
+    G4double thickness = 3.6 * mm;
+    G4double detectorLength = 5 * cm;
+    G4double detectorHeight = 5 * cm;
 
-    auto solidBarrel = new G4Tubs("Barrel", bodyWidth + spaceAround, bodyWidth + spaceAround + thickness,
-                                  0.5 * bodyLength + spaceAround, 0 * deg, 360 * deg);
-    auto logicBarrel = new G4LogicalVolume(solidBarrel, air, "Barrel");
-    // auto physBarrel =
-    new G4PVPlacement(nullptr, {0, 0, 0.5 * bodyLength}, logicBarrel, "Barrel", logicWorld, false, 0, true);
+    G4double detectionTargetDistance = 80 * mm;
+    G4double detectionDistance = 250 * mm;
+    G4double detectionAngle = 30 * deg;
 
-    auto solidFrontCap =
-        new G4Tubs("FrontCap", 0, bodyWidth + spaceAround + thickness, 0.5 * thickness, 0 * deg, 360 * deg);
-    auto logicFrontCap = new G4LogicalVolume(solidFrontCap, air, "FrontCap");
-    // auto physFrontCap =
-    new G4PVPlacement(nullptr, {0, 0, -spaceAround - 0.5 * thickness}, logicFrontCap, "FrontCap", logicWorld, false, 0,
+    G4ThreeVector detectorCenter1 = G4ThreeVector(0, 0, detectionTargetDistance - 0.5 * thickness) +
+                                    G4ThreeVector(0, 0, detectionDistance).rotate(detectionAngle, {0, 1, 0});
+
+    G4ThreeVector detectorCenter2 = G4ThreeVector(0, 0, detectionTargetDistance + 0.5 * thickness) +
+                                    G4ThreeVector(0, 0, detectionDistance).rotate(detectionAngle, {0, 1, 0});
+
+    G4RotationMatrix* detectorRotation = new G4RotationMatrix();
+    detectorRotation->rotate(-detectionAngle, {0, 1, 0});
+
+    auto solidDetector1 = new G4Box("Detector1", 0.5 * detectorHeight, 0.5 * detectorLength, 0.05);
+    auto logicDetector1 = new G4LogicalVolume(solidDetector1, galactic, "Detector1");
+
+    auto solidDetector2 = new G4Box("Detector2", 0.5 * detectorHeight, 0.5 * detectorLength, 0.05);
+    auto logicDetector2 = new G4LogicalVolume(solidDetector2, galactic, "Detector2");
+
+    new G4PVPlacement(detectorRotation, // no rotation
+                      detectorCenter1,  // at (0,0,0)
+                      logicDetector1,   // its logical volume
+                      "Detector1",      // its name
+                      logicWorld,       // its mother  volume
+                      false,            // no boolean operation
+                      0,                // copy number
+                      true);            // overlaps checking
+
+    new G4PVPlacement(detectorRotation, // no rotation
+                      detectorCenter2,  // at (0,0,0)
+                      logicDetector2,   // its logical volume
+                      "Detector2",      // its name
+                      logicWorld,       // its mother  volume
+                      false,            // no boolean operation
+                      0,                // copy number
                       true);
-
-    auto solidEndCap =
-        new G4Tubs("EndCap", 0, bodyWidth + spaceAround + thickness, 0.5 * thickness, 0 * deg, 360 * deg);
-    auto logicEndCap = new G4LogicalVolume(solidEndCap, air, "EndCap");
-    // auto physEndCap =
-    new G4PVPlacement(nullptr, {0, 0, bodyLength + spaceAround + 0.5 * thickness}, logicEndCap, "EndCap", logicWorld,
-                      false, 0, true);
 
     return physWorld;
 }

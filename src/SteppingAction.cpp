@@ -1,26 +1,25 @@
 #include "SteppingAction.h"
-#include "EventAction.h"
+#include "RunAction.h"
+#include "TrackInformation.h"
 
 #include <CLHEP/Random/Random.h>
 #include <CLHEP/Units/SystemOfUnits.h>
-#include <RunAction.h>
 
 #include <G4RunManager.hh>
 #include <G4Step.hh>
 #include <G4SystemOfUnits.hh>
+#include <G4Track.hh>
 
-SteppingAction::SteppingAction(EventAction* ea)
-    : eventAction(ea)
+SteppingAction::SteppingAction(RunAction* ra)
+    : runAction(ra)
 {
 }
 
 void SteppingAction::UserSteppingAction(const G4Step* step)
 {
-    // if the step is exiting the world we don't cares
+    // if the step is exiting the world we don't care
     if (!step->GetTrack()->GetNextVolume())
         return;
-
-    const auto trackID = step->GetTrack()->GetTrackID();
 
     const auto preStepPoint = step->GetPreStepPoint();
     const auto postStepPoint = step->GetPostStepPoint();
@@ -31,34 +30,38 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     const auto preName = preLogicalVolume->GetName();
     const auto postName = postLogicalVolume->GetName();
 
-    if (preName == "Body" /*&& step->GetTrack()->GetTrackID() == 1*/)
+    auto rootWriter = runAction->getRootWriter();
+
+    if (preName == "Body")
     {
         HandleBeamInBody(step);
-        return;
+        if (postName == "World")
+            rootWriter->addEscapingParticle(step);
     }
 
-    if (preName != "World")
+    if (!step->GetTrack()->GetDynamicParticle()->GetCharge())
         return;
 
-    if (postName == "Barrel" || postName == "EndCap")
+    if (postName == "Detector1")
     {
-        const auto pdg = step->GetTrack()->GetDefinition()->GetPDGEncoding();
-        const auto energy = step->GetPreStepPoint()->GetTotalEnergy() / CLHEP::MeV;
-        const auto pos = postStepPoint->GetPosition() / CLHEP::mm;
-        const auto mom = postStepPoint->GetMomentumDirection();
-        const auto time = postStepPoint->GetGlobalTime() / CLHEP::second;
+        auto userInfo = dynamic_cast<TrackInformation*>(step->GetTrack()->GetUserInformation());
+        userInfo->detected1 = postStepPoint->GetPosition();
 
-        const auto initialPosition = eventAction->getInitialPosition(trackID);
-
-        eventAction->addEscapingParticle(pdg, pos, mom, energy, time, initialPosition);
+        if (userInfo->isDetectedBoth())
+            rootWriter->addDetectedParticle(step);
     }
+    if (postName == "Detector2")
+    {
+        auto userInfo = dynamic_cast<TrackInformation*>(step->GetTrack()->GetUserInformation());
+        userInfo->detected2 = postStepPoint->GetPosition();
 
-    // G4cout << name << " - " << pdg << " : " << energy / keV << " keV" << G4endl;
+        if (userInfo->isDetectedBoth())
+            rootWriter->addDetectedParticle(step);
+    }
 }
 
 void SteppingAction::HandleBeamInBody(const G4Step* step)
 {
-    auto runAction = dynamic_cast<const RunAction*>(G4RunManager::GetRunManager()->GetUserRunAction());
     auto rootWriter = runAction->getRootWriter();
 
     const auto dE = step->GetTotalEnergyDeposit() / MeV;

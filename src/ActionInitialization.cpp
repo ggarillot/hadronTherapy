@@ -25,7 +25,7 @@ ActionInitialization::ActionInitialization(G4String p, G4String b, G4int s)
 
 void ActionInitialization::BuildForMaster() const
 {
-    RunAction* runAction = new RunAction(baseRootFileName);
+    auto runAction = new RunAction(baseRootFileName);
     SetUserAction(runAction);
 }
 
@@ -33,13 +33,13 @@ void ActionInitialization::Build() const
 {
     SetUserAction(new PrimaryGeneratorAction(particleName, beamEnergy));
 
-    RunAction* runAction = new RunAction(baseRootFileName);
+    auto runAction = new RunAction(baseRootFileName);
+    auto trackingAction = new TrackingAction(runAction);
+    auto eventAction = new EventAction(runAction, trackingAction);
+    auto steppingAction = new SteppingAction(runAction);
+
     SetUserAction(runAction);
-
-    EventAction* eventAction = new EventAction(runAction);
     SetUserAction(eventAction);
-
-    SetUserAction(new SteppingAction(eventAction));
-
-    SetUserAction(new TrackingAction(eventAction));
+    SetUserAction(steppingAction);
+    SetUserAction(trackingAction);
 }

@@ -1,16 +1,23 @@
 #pragma once
 
-#include "EventAction.h"
+#include "RunAction.h"
 #include <G4UserTrackingAction.hh>
+
+class RunAction;
+class G4ParticleDefinition;
 
 class TrackingAction : public G4UserTrackingAction
 {
   public:
-    TrackingAction(EventAction* eventAction);
+    TrackingAction(RunAction* runAction);
 
     void PreUserTrackingAction(const G4Track*) override;
     void PostUserTrackingAction(const G4Track*) override;
 
+    void reset();
+
   protected:
-    EventAction* eventAction = nullptr;
+    RunAction* runAction = nullptr;
+
+    std::map<G4int, const G4ParticleDefinition*> particleDefinitions{};
 };

@@ -34,4 +34,6 @@ if __name__ == "__main__":
     for variable in VARIABLE_LIST:
         dataFrame2 = dataFrame2.Redefine(f"{variable}", f"{variable}[cut]")
 
-    dataFrame2.Snapshot("tree", "test.root", VARIABLE_LIST)
+    split = INPUTFILE.split(".")[0]
+    split = f"{split}_{PARTICLE_ID}.root"
+    dataFrame2.Snapshot("tree", split, VARIABLE_LIST)

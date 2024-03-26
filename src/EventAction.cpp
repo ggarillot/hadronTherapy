@@ -6,8 +6,6 @@
 #include <G4Event.hh>
 #include <G4RunManager.hh>
 #include <G4Track.hh>
-#include <ctime>
-#include <map>
 
 EventAction::EventAction(RunAction* ra, TrackingAction* ta)
     : runAction(ra)

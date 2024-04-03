@@ -15,7 +15,6 @@
 
 #include <filesystem>
 #include <limits>
-#include <memory>
 #include <ostream>
 #include <random>
 #include <string>
@@ -173,8 +172,7 @@ int main(int argc, char** argv)
     canvas->SetRightMargin(0.025);
     canvas->SetTopMargin(0.035);
 
-    // const auto scalingFactor = 1. / histoAll->Integral();
-    const auto scalingFactor = nIrrad / nEvents * (60 * (timeEnd - timeBegin));
+    const auto scalingFactor = nIrrad / nEvents;
 
     histoAll->Scale(scalingFactor);
     histoO->Scale(scalingFactor);
@@ -230,7 +228,6 @@ int main(int argc, char** argv)
     histoN->Write("histoN");
     histoDose->Write("histoDose");
     canvas->Write("c");
-    // canvas->SaveAs(outputFileName.c_str());
 
     outputFile->Close();
     inputFile->Close();

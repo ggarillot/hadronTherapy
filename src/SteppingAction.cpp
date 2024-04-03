@@ -7,11 +7,14 @@
 
 #include <G4RunManager.hh>
 #include <G4Step.hh>
+#include <G4String.hh>
 #include <G4SystemOfUnits.hh>
 #include <G4Track.hh>
+#include <G4Types.hh>
 
-SteppingAction::SteppingAction(RunAction* ra)
+SteppingAction::SteppingAction(RunAction* ra, G4bool omitNeutrons)
     : runAction(ra)
+    , omitNeutrons(omitNeutrons)
 {
 }
 
@@ -21,42 +24,36 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     if (!step->GetTrack()->GetNextVolume())
         return;
 
+    const auto trackInfo = dynamic_cast<TrackInformation*>(step->GetTrack()->GetUserInformation());
+    const auto particleDefinition = step->GetTrack()->GetParticleDefinition();
+
     const auto preStepPoint = step->GetPreStepPoint();
     const auto postStepPoint = step->GetPostStepPoint();
 
     const auto preLogicalVolume = preStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
     const auto postLogicalVolume = postStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
 
-    const auto preName = preLogicalVolume->GetName();
+    G4String   regionName = "";
+    const auto region = preLogicalVolume->GetRegion();
+    if (region)
+        regionName = region->GetName();
+
     const auto postName = postLogicalVolume->GetName();
 
     auto rootWriter = runAction->getRootWriter();
 
-    if (preName == "Body")
+    if (regionName == "Body")
     {
         HandleBeamInBody(step);
-        if (postName == "World")
-            rootWriter->addEscapingParticle(step);
-    }
+        if (postName == "World" && trackInfo->doComeFromBody)
+        {
+            bool write = true;
+            if (omitNeutrons && particleDefinition->GetPDGEncoding() == 2112)
+                write = false;
 
-    if (!step->GetTrack()->GetDynamicParticle()->GetCharge())
-        return;
-
-    if (postName == "Detector1")
-    {
-        auto userInfo = dynamic_cast<TrackInformation*>(step->GetTrack()->GetUserInformation());
-        userInfo->detected1 = postStepPoint->GetPosition();
-
-        if (userInfo->isDetectedBoth())
-            rootWriter->addDetectedParticle(step);
-    }
-    if (postName == "Detector2")
-    {
-        auto userInfo = dynamic_cast<TrackInformation*>(step->GetTrack()->GetUserInformation());
-        userInfo->detected2 = postStepPoint->GetPosition();
-
-        if (userInfo->isDetectedBoth())
-            rootWriter->addDetectedParticle(step);
+            if (write)
+                rootWriter->addEscapingParticle(step);
+        }
     }
 }
 
@@ -65,10 +62,14 @@ void SteppingAction::HandleBeamInBody(const G4Step* step)
     auto rootWriter = runAction->getRootWriter();
 
     const auto dE = step->GetTotalEnergyDeposit() / MeV;
-    const auto z2 = step->GetPostStepPoint()->GetPosition().z() / mm;
-    const auto z1 = step->GetPreStepPoint()->GetPosition().z() / mm;
 
-    const auto z = CLHEP::HepRandom()() * (z2 - z1) + z1;
+    const auto endPos = step->GetPostStepPoint()->GetPosition() / mm;
+    const auto beginPos = step->GetPreStepPoint()->GetPosition() / mm;
 
-    rootWriter->fillHisto(z, dE);
+    const auto pos = CLHEP::HepRandom()() * (endPos - beginPos) + beginPos;
+
+    rootWriter->addEdep(pos, dE);
+
+    // if (step->GetTrack()->GetTrackID() == 1)
+    //     rootWriter->addStepLength(step->GetStepLength());
 }

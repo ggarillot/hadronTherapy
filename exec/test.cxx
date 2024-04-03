@@ -13,6 +13,7 @@
 #include <G4DecayPhysics.hh>
 #include <G4PhysListFactory.hh>
 #include <G4RadioactiveDecayPhysics.hh>
+#include <G4StepLimiterPhysics.hh>
 #include <G4UIExecutive.hh>
 #include <G4VisExecutive.hh>
 #include <QGSP_BIC_HP.hh>
@@ -28,14 +29,16 @@ int main(int argc, char** argv)
     G4String bodyMaterial{};
     G4double bodyWidth{};
     G4int    nThreads{};
+    G4bool   omitNeutrons{false};
 
     app.add_option("-N", particleName, "name of the beam particle : proton or carbon")->required();
     app.add_option("-e", beamEnergyStr, "beam energy")->required();
     app.add_option("-s", seed, "seed")->required();
     app.add_option("-n", nEvents, "number of events")->required();
     app.add_option("-m", bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
-    app.add_option("-b", bodyWidth, "body width in cm")->default_val(20);
+    app.add_option("-b", bodyWidth, "body width in cm")->default_val(10);
     app.add_option("-t", nThreads, "number of threads")->default_val(1);
+    app.add_flag("--omitNeutrons", omitNeutrons, "do note write neutrons in file");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -44,6 +47,7 @@ int main(int argc, char** argv)
     G4Random::setTheSeed(seed + 2);
 
     auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::MT);
+    // auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
     runManager->SetNumberOfThreads(nThreads);
 
     runManager->SetUserInitialization(new DetectorConstruction(bodyWidth * CLHEP::cm, bodyMaterial));
@@ -54,7 +58,7 @@ int main(int argc, char** argv)
     runManager->SetUserInitialization(phys);
 
     // User action initialization
-    runManager->SetUserInitialization(new ActionInitialization(particleName, beamEnergyStr, seed));
+    runManager->SetUserInitialization(new ActionInitialization(particleName, beamEnergyStr, seed, omitNeutrons));
 
     runManager->Initialize();
     runManager->BeamOn(nEvents);

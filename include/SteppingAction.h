@@ -1,5 +1,6 @@
 #pragma once
 
+#include <G4Types.hh>
 #include <G4UserSteppingAction.hh>
 
 class G4Step;
@@ -9,7 +10,7 @@ class TrackingAction;
 class SteppingAction : public G4UserSteppingAction
 {
   public:
-    SteppingAction(RunAction* runAction);
+    SteppingAction(RunAction* runAction, G4bool omitNeutrons = false);
 
     void UserSteppingAction(const G4Step* step) override;
 
@@ -18,4 +19,5 @@ class SteppingAction : public G4UserSteppingAction
 
   protected:
     RunAction* runAction = nullptr;
+    G4bool     omitNeutrons = false;
 };

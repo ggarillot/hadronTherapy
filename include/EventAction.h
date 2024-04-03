@@ -1,18 +1,14 @@
 #pragma once
 
-#include "RunAction.h"
-#include "TrackingAction.h"
-
 #include <G4ThreeVector.hh>
 #include <G4UserEventAction.hh>
 #include <bits/types/clock_t.h>
 #include <globals.hh>
 
-#include <chrono>
-#include <map>
-
 class G4Event;
 class G4Track;
+class RunAction;
+class TrackingAction;
 
 class EventAction : public G4UserEventAction
 {

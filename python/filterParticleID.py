@@ -37,3 +37,13 @@ if __name__ == "__main__":
     split = INPUTFILE.split(".")[0]
     split = f"{split}_{PARTICLE_ID}.root"
     dataFrame2.Snapshot("tree", split, VARIABLE_LIST)
+
+    inputFile = R.TFile.Open(INPUTFILE, "READ")
+    outputFile = R.TFile.Open(split, "UPDATE")
+
+    histo = inputFile.Get("histo")
+
+    outputFile.cd()
+    histo.Write()
+    outputFile.Close()
+    inputFile.Close()

@@ -1,11 +1,15 @@
 #pragma once
 
+#include <CLHEP/Vector/ThreeVector.h>
 #include <G4ThreeVector.hh>
+
 #include <globals.hh>
 #include <vector>
 
 class TTree;
-class TH1D;
+class TH2;
+class TH1;
+// class THnSparse;
 class TFile;
 
 class G4Step;
@@ -20,13 +24,15 @@ class RootWriter
 
     void setEventNumber(const G4int eventNumber);
 
-    void fillHisto(double z, double dEdX);
+    void addEdep(const CLHEP::Hep3Vector& pos, const double dE);
     void setPrimaryEnd(const G4ThreeVector pos);
 
     void addPositronEmitter(const G4int Z, const G4double z, const G4double time);
     void addEscapingParticle(const G4Step* step);
 
-    void addDetectedParticle(const G4Step* step);
+    void addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom);
+
+    void addStepLength(const G4double stepLength);
 
     void fillTree();
 
@@ -63,18 +69,19 @@ class RootWriter
 
     std::vector<int> parentEscaping{};
 
-    TTree* detectorTree = nullptr;
+    TTree* beamTree = nullptr;
 
-    int    detected_PDG{};
-    double detected_Y1{};
-    double detected_Z1{};
-    double detected_Y2{};
-    double detected_Z2{};
-    double detected_initX{};
-    double detected_initY{};
-    double detected_initZ{};
-    double detected_time{};
-    double detected_energy{};
+    double beamPosX{};
+    double beamPosY{};
+    double beamPosZ{};
 
-    TH1D* histo = nullptr;
+    double beamMomX{};
+    double beamMomY{};
+    double beamMomZ{};
+
+    // THnSparse* edepHisto = nullptr;
+    // THnSparse* edepHistoZoom = nullptr;
+    TH2* edepHisto = nullptr;
+
+    // TH1* stepLengthHisto = nullptr;
 };

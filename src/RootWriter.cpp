@@ -6,8 +6,12 @@
 #include <G4Step.hh>
 #include <G4Track.hh>
 
+#include <G4ios.hh>
+#include <TAxis.h>
 #include <TFile.h>
-#include <TH1D.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <THnSparse.h>
 #include <TTree.h>
 
 void RootWriter::openRootFile(const G4String& name)
@@ -24,11 +28,15 @@ void RootWriter::openRootFile(const G4String& name)
 
 void RootWriter::closeRootFile()
 {
-    histo->Write();
+    edepHisto->Write();
+    // edepHistoZoom->Write();
+    // stepLengthHisto->Write();
 
     tree->Write();
 
-    detectorTree->Write();
+    // beamTree->Write();
+
+    rootFile->Purge();
 
     rootFile->Close();
     delete rootFile;
@@ -38,7 +46,27 @@ void RootWriter::createHistograms()
 {
     rootFile->cd();
 
-    histo = new TH1D("histo", ";;", 10000, 0, 1800);
+    // std::array<int, 3>    bins = {100, 100, 2000};
+    // std::array<double, 3> xmin = {-150, -150, 0};
+    // std::array<double, 3> xmax = {150, 150, 300};
+
+    // edepHisto = new THnSparseF("hs", "", 3, bins.data(), xmin.data(), xmax.data());
+    // edepHisto->GetAxis(0)->SetTitle("x");
+    // edepHisto->GetAxis(1)->SetTitle("y");
+    // edepHisto->GetAxis(2)->SetTitle("z");
+
+    // bins = {300, 300, 1200};
+    // xmin = {-20, -20, 0};
+    // xmax = {20, 20, 180};
+
+    // edepHistoZoom = new THnSparseF("hsZoom", "", 3, bins.data(), xmin.data(), xmax.data());
+    // edepHistoZoom->GetAxis(0)->SetTitle("x");
+    // edepHistoZoom->GetAxis(1)->SetTitle("y");
+    // edepHistoZoom->GetAxis(2)->SetTitle("z");
+
+    edepHisto = new TH2F("hs", "Deposited energy;z (mm);x (mm)", 3000, 0, 300, 3000, -150, 150);
+
+    // stepLengthHisto = new TH1F("step", ";step length (mm);", 10000, 0, 30);
 
     tree = new TTree("tree", "tree");
 
@@ -65,18 +93,14 @@ void RootWriter::createHistograms()
     tree->Branch("initialZEsc", &initialZEscaping);
     tree->Branch("parentEsc", &parentEscaping);
 
-    detectorTree = new TTree("detector", "detector");
+    beamTree = new TTree("beamTree", "beamTree");
 
-    detectorTree->Branch("PDG", &detected_PDG);
-    detectorTree->Branch("y1", &detected_Y1);
-    detectorTree->Branch("z1", &detected_Z1);
-    detectorTree->Branch("y2", &detected_Y2);
-    detectorTree->Branch("z2", &detected_Z2);
-    detectorTree->Branch("initX", &detected_initX);
-    detectorTree->Branch("initY", &detected_initY);
-    detectorTree->Branch("initZ", &detected_initZ);
-    detectorTree->Branch("time", &detected_time);
-    detectorTree->Branch("energy", &detected_energy);
+    beamTree->Branch("x", &beamPosX);
+    beamTree->Branch("y", &beamPosY);
+    beamTree->Branch("z", &beamPosZ);
+    beamTree->Branch("momX", &beamMomX);
+    beamTree->Branch("momY", &beamMomY);
+    beamTree->Branch("momZ", &beamMomZ);
 }
 
 void RootWriter::setEventNumber(const G4int eventNumber)
@@ -84,9 +108,11 @@ void RootWriter::setEventNumber(const G4int eventNumber)
     eventID = eventNumber;
 }
 
-void RootWriter::fillHisto(double _z, double dE)
+void RootWriter::addEdep(const CLHEP::Hep3Vector& pos, const double dE)
 {
-    histo->Fill(_z, dE);
+    // edepHisto->Fill(pos.x(), pos.y(), pos.z(), dE);
+    edepHisto->Fill(pos.z(), pos.x(), dE);
+    // edepHistoZoom->Fill(pos.x(), pos.y(), pos.z(), dE);
 }
 
 void RootWriter::setPrimaryEnd(const G4ThreeVector pos)
@@ -139,30 +165,19 @@ void RootWriter::addEscapingParticle(const G4Step* step)
         parentEscaping.push_back(0);
 }
 
-void RootWriter::addDetectedParticle(const G4Step* step)
+void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom)
 {
-    const auto trackInfo = dynamic_cast<const TrackInformation*>(step->GetTrack()->GetUserInformation());
-    const auto postStepPoint = step->GetPostStepPoint();
+    beamPosX = pos.x();
+    beamPosY = pos.y();
+    beamPosZ = pos.z();
+    beamMomX = mom.x();
+    beamMomY = mom.y();
+    beamMomZ = mom.z();
+}
 
-    const auto detectedPosition1 = trackInfo->detected1.value() / CLHEP::mm;
-    const auto detectedPosition2 = trackInfo->detected2.value() / CLHEP::mm;
-
-    detected_PDG = step->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
-    detected_Y1 = detectedPosition1.y();
-    detected_Z1 = detectedPosition1.z();
-    detected_Y2 = detectedPosition2.y();
-    detected_Z2 = detectedPosition2.z();
-
-    const auto initialPosition = trackInfo->initialPosition / CLHEP::mm;
-
-    detected_initX = initialPosition.x();
-    detected_initY = initialPosition.y();
-    detected_initZ = initialPosition.z();
-
-    detected_time = postStepPoint->GetGlobalTime() / CLHEP::second;
-    detected_energy = postStepPoint->GetTotalEnergy();
-
-    detectorTree->Fill();
+void RootWriter::addStepLength(const G4double stepLength)
+{
+    // stepLengthHisto->Fill(stepLength);
 }
 
 void RootWriter::fillTree()
@@ -184,4 +199,6 @@ void RootWriter::fillTree()
     initialYEscaping.clear();
     initialZEscaping.clear();
     parentEscaping.clear();
+
+    beamTree->Fill();
 }

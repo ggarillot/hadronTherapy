@@ -26,7 +26,12 @@ void TrackingAction::PreUserTrackingAction(const G4Track* track)
     const auto initialPosition = track->GetPosition();
     const auto parentParticleDefinition = trackID == 1 ? nullptr : particleDefinitions.at(parentID);
 
-    const auto trackInfo = new TrackInformation(initialPosition, parentParticleDefinition);
+    auto trackInfo = new TrackInformation(initialPosition, parentParticleDefinition);
+
+    const auto volumeName = track->GetVolume()->GetName();
+    if (volumeName == "Body")
+        trackInfo->doComeFromBody = true;
+
     track->SetUserInformation(trackInfo);
 }
 

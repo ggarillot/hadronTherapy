@@ -4,10 +4,9 @@
 #include <G4Run.hh>
 #include <G4RunManager.hh>
 
+#include <G4ios.hh>
 #include <chrono>
 #include <cstdlib>
-#include <ctime>
-#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <string>
@@ -16,8 +15,9 @@
 std::vector<G4int> RunAction::processedEventsPerThread = {};
 std::atomic<G4int> RunAction::nThreadsCompleted = 0;
 
-RunAction::RunAction(G4String n)
+RunAction::RunAction(G4String n, G4bool omitNeutrons)
     : baseRootFileName(n)
+    , omitNeutrons(omitNeutrons)
 {
 }
 
@@ -86,7 +86,8 @@ void RunAction::BeginOfRunAction(const G4Run*)
 
 void RunAction::EndOfRunAction(const G4Run*)
 {
-    const auto type = G4RunManager::GetRunManager()->GetRunManagerType();
+    const auto runManager = G4RunManager::GetRunManager();
+    const auto type = runManager->GetRunManagerType();
 
     if (rootWriter)
     {
@@ -94,6 +95,8 @@ void RunAction::EndOfRunAction(const G4Run*)
 
         delete rootWriter;
         rootWriter = nullptr;
+
+        // G4cout << "RootFileDeleted" << G4endl;
     }
 
     if (type == G4RunManager::masterRM)
@@ -108,12 +111,18 @@ void RunAction::EndOfRunAction(const G4Run*)
         printingThread.join();
 
         std::stringstream haddCmd;
-        haddCmd << "hadd -f " << baseRootFileName << ".root " << baseRootFileName << "_T*";
-        system(haddCmd.str().c_str());
+        haddCmd << "hadd -j " << runManager->GetNumberOfThreads() << " -f " << baseRootFileName << ".root "
+                << baseRootFileName << "_T*";
+        const auto haddReturn = system(haddCmd.str().c_str());
 
-        std::stringstream cleanCmd;
-        cleanCmd << "rm " << baseRootFileName << "_T*";
-        system(cleanCmd.str().c_str());
+        G4cout << haddReturn << G4endl;
+
+        if (haddReturn == 0)
+        {
+            std::stringstream cleanCmd;
+            cleanCmd << "rm " << baseRootFileName << "_T*";
+            system(cleanCmd.str().c_str());
+        }
     }
     else if (type == G4RunManager::workerRM)
     {
@@ -127,7 +136,7 @@ void RunAction::EndOfRunAction(const G4Run*)
 void RunAction::update(G4int nEventsProcessedThread)
 {
     const auto type = G4RunManager::GetRunManager()->GetRunManagerType();
-    if (type == G4RunManager::masterRM)
+    if (type == G4RunManager::masterRM || type == G4RunManager::sequentialRM)
         return;
 
     const auto thread = G4Threading::G4GetThreadId();

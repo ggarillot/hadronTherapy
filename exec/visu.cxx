@@ -45,8 +45,8 @@ int main(int argc, char** argv)
 
     G4Random::setTheSeed(seed + 2);
 
-    auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::MT);
-    runManager->SetNumberOfThreads(1);
+    auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly);
+    // runManager->SetNumberOfThreads(nThreads);
 
     runManager->SetUserInitialization(new DetectorConstruction(bodyWidth * CLHEP::cm, bodyMaterial));
 

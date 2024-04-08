@@ -20,20 +20,22 @@ int main(int argc, char** argv)
 {
     CLI::App app;
 
-    G4String particleName{};
-    G4String beamEnergyStr{};
-    G4int    seed{};
-    // G4int    nEvents{};
-    G4String bodyMaterial{};
-    G4double bodyWidth{};
-    // G4int    nThreads{};
+    auto settings = Settings{};
 
-    app.add_option("-N", particleName, "name of the beam particle : proton or carbon")->required();
-    app.add_option("-e", beamEnergyStr, "beam energy in MeV")->required();
-    app.add_option("-s", seed, "seed")->required();
+    // G4String particleName{};
+    // G4String beamEnergyStr{};
+    // G4int    seed{};
+    // // G4int    nEvents{};
+    // G4String bodyMaterial{};
+    // G4double bodyWidth{};
+    // // G4int    nThreads{};
+
+    app.add_option("-N", settings.particleName, "name of the beam particle : proton or carbon")->required();
+    app.add_option("-e", settings.beamMeanEnergy, "beam energy in MeV")->required();
+    app.add_option("-s", settings.seed, "seed")->required();
     // app.add_option("-n", nEvents, "number of events")->required();
-    app.add_option("-m", bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
-    app.add_option("-b", bodyWidth, "body width in cm")->default_val(10);
+    app.add_option("-m", settings.bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
+    app.add_option("-b", settings.bodyWidth, "body width in cm")->default_val(10);
     // app.add_option("-t", nThreads, "number of threads")->default_val(1);
 
     CLI11_PARSE(app, argc, argv);
@@ -43,12 +45,12 @@ int main(int argc, char** argv)
 
     ROOT::EnableThreadSafety();
 
-    G4Random::setTheSeed(seed + 2);
+    G4Random::setTheSeed(settings.seed + 2);
 
     auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly);
     // runManager->SetNumberOfThreads(nThreads);
 
-    runManager->SetUserInitialization(new DetectorConstruction(bodyWidth * CLHEP::cm, bodyMaterial));
+    runManager->SetUserInitialization(new DetectorConstruction(settings));
 
     // G4VModularPhysicsList* phys = new QGSP_BIC_HP;
     G4VModularPhysicsList* phys = new PhysicsList;
@@ -56,7 +58,7 @@ int main(int argc, char** argv)
     runManager->SetUserInitialization(phys);
 
     // User action initialization
-    runManager->SetUserInitialization(new ActionInitialization(particleName, beamEnergyStr, seed));
+    runManager->SetUserInitialization(new ActionInitialization(settings));
 
     // Initialize visualization
     //

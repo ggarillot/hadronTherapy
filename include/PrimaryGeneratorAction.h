@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RootWriter.h"
 #include <G4VUserPrimaryGeneratorAction.hh>
 
 #include <globals.hh>
@@ -8,12 +9,12 @@
 
 class G4ParticleGun;
 class G4ParticleDefinition;
-class RunAction;
+class RootWriter;
 
 class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
-    PrimaryGeneratorAction(RunAction* runAction, G4String particleName, G4double beamEnergy);
+    PrimaryGeneratorAction(RootWriter* rootWriter, G4String particleName, G4double beamEnergy);
     ~PrimaryGeneratorAction();
 
     void setBeamProfile(const CLHEP::HepSymMatrix& matrixXPX, const CLHEP::HepSymMatrix& matrixYPY);
@@ -21,7 +22,7 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     void GeneratePrimaries(G4Event* anEvent) override;
 
   protected:
-    RunAction* runAction = nullptr;
+    RootWriter* rootWriter = nullptr;
 
     G4ParticleGun* particleGun = nullptr;
 

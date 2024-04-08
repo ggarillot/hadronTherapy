@@ -1,6 +1,6 @@
 #include "TrackingAction.h"
 #include "EventAction.h"
-#include "RunAction.h"
+#include "RootWriter.h"
 #include "TrackInformation.h"
 
 #include <CLHEP/Units/SystemOfUnits.h>
@@ -10,8 +10,8 @@
 #include <G4Track.hh>
 #include <G4VProcess.hh>
 
-TrackingAction::TrackingAction(RunAction* ra)
-    : runAction(ra)
+TrackingAction::TrackingAction(RootWriter* rootWriter)
+    : rootWriter(rootWriter)
 {
 }
 
@@ -42,8 +42,6 @@ void TrackingAction::PostUserTrackingAction(const G4Track* track)
 
     const auto id = particleDef->GetPDGEncoding();
     const auto z = track->GetPosition().z();
-
-    auto rootWriter = runAction->getRootWriter();
 
     if (id == 1000060110)
         rootWriter->addPositronEmitter(6, z, time);

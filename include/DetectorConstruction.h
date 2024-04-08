@@ -3,6 +3,8 @@
 #include <CLHEP/Units/SystemOfUnits.h>
 #include <G4VUserDetectorConstruction.hh>
 
+#include "Settings.h"
+
 class G4VPhysicalVolume;
 
 class DetectorConstruction : public G4VUserDetectorConstruction
@@ -15,7 +17,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     };
 
   public:
-    DetectorConstruction(const G4double bWidth, const G4String& bodyMaterialStr = "waterGel");
+    DetectorConstruction(const Settings& settings);
     ~DetectorConstruction() = default;
 
     G4VPhysicalVolume* Construct() override;

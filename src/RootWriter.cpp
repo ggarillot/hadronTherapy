@@ -28,6 +28,9 @@ void RootWriter::openRootFile(const G4String& name)
 
 void RootWriter::closeRootFile()
 {
+    if (!rootFile)
+        return;
+
     edepHisto->Write();
     // edepHistoZoom->Write();
     // stepLengthHisto->Write();
@@ -40,6 +43,10 @@ void RootWriter::closeRootFile()
 
     rootFile->Close();
     delete rootFile;
+
+    edepHisto = nullptr;
+    tree = nullptr;
+    beamTree = nullptr;
 }
 
 void RootWriter::createHistograms()
@@ -165,7 +172,7 @@ void RootWriter::addEscapingParticle(const G4Step* step)
         parentEscaping.push_back(0);
 }
 
-void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom)
+void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, G4double energy)
 {
     beamPosX = pos.x();
     beamPosY = pos.y();
@@ -173,6 +180,7 @@ void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::He
     beamMomX = mom.x();
     beamMomY = mom.y();
     beamMomZ = mom.z();
+    beamEnergy = energy;
 }
 
 void RootWriter::addStepLength(const G4double stepLength)
@@ -182,7 +190,11 @@ void RootWriter::addStepLength(const G4double stepLength)
 
 void RootWriter::fillTree()
 {
-    tree->Fill();
+    if (tree)
+        tree->Fill();
+
+    if (beamTree)
+        beamTree->Fill();
 
     idVec.clear();
     zVec.clear();
@@ -199,6 +211,4 @@ void RootWriter::fillTree()
     initialYEscaping.clear();
     initialZEscaping.clear();
     parentEscaping.clear();
-
-    beamTree->Fill();
 }

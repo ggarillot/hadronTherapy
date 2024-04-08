@@ -30,7 +30,7 @@ class RootWriter
     void addPositronEmitter(const G4int Z, const G4double z, const G4double time);
     void addEscapingParticle(const G4Step* step);
 
-    void addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom);
+    void addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, G4double energy);
 
     void addStepLength(const G4double stepLength);
 
@@ -78,6 +78,7 @@ class RootWriter
     double beamMomX{};
     double beamMomY{};
     double beamMomZ{};
+    double beamEnergy{};
 
     // THnSparse* edepHisto = nullptr;
     // THnSparse* edepHistoZoom = nullptr;

@@ -12,18 +12,18 @@
 #include <G4VPhysicalVolume.hh>
 #include <stdexcept>
 
-DetectorConstruction::DetectorConstruction(const G4double bWidth, const G4String& bodyMaterialStr)
-    : bodyWidth(bWidth)
+DetectorConstruction::DetectorConstruction(const Settings& settings)
 {
+    bodyWidth = settings.bodyWidth;
     if (bodyWidth < 0)
         throw;
 
-    if (bodyMaterialStr == "waterGel")
+    if (settings.bodyMaterial == "waterGel")
         bodyMaterialType = kWaterGel;
     else
         bodyMaterialType = kWater;
 
-    G4cout << "Body is " << bodyMaterialStr << G4endl;
+    G4cout << "Body is " << settings.bodyMaterial << G4endl;
     G4cout << "Body width : " << bodyWidth / CLHEP::cm << " cm" << G4endl;
 }
 

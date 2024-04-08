@@ -2,6 +2,7 @@
 #include "EventAction.h"
 #include "PrimaryGeneratorAction.h"
 #include "RunAction.h"
+#include "Settings.h"
 #include "SteppingAction.h"
 #include "TrackingAction.h"
 
@@ -11,17 +12,20 @@
 
 #include <G4RunManager.hh>
 
-ActionInitialization::ActionInitialization(G4String p, G4String b, G4int s, G4bool omitNeutrons)
-    : particleName(p)
-    , seed(s)
-    , omitNeutrons(omitNeutrons)
+ActionInitialization::ActionInitialization(const Settings& settings)
+    : settings(settings)
 {
+    particleName = settings.particleName;
+    seed = settings.seed;
     if (particleName != "proton" && particleName != "carbon")
         throw std::logic_error("proton or carbon only");
 
-    baseRootFileName = particleName + "_" + b + "_" + std::to_string(seed);
+    std::stringstream sstr;
+    sstr << particleName << "_" << int(std::round(settings.beamMeanEnergy)) << "_" << seed;
+    baseRootFileName = sstr.str();
 
-    beamEnergy = stod(b) * CLHEP::MeV;
+    // beamEnergy = stod(b) * CLHEP::MeV;
+    beamEnergy = settings.beamMeanEnergy;
 }
 
 void ActionInitialization::BuildForMaster() const
@@ -34,34 +38,36 @@ void ActionInitialization::Build() const
 {
     auto runAction = new RunAction(baseRootFileName);
 
-    auto primaryGeneratorAction = new PrimaryGeneratorAction(runAction, particleName, beamEnergy);
+    auto rootWriter = runAction->getRootWriter();
+
+    auto primaryGeneratorAction = new PrimaryGeneratorAction(rootWriter, particleName, beamEnergy);
     SetUserAction(primaryGeneratorAction);
 
-    const G4double sigmaX = 0.2 * CLHEP::mm;
-    const G4double sigmaPX = 0.032 * CLHEP::rad;
-    const G4double corrXPX = -0.9411;
-    const G4double covXPX = corrXPX * sigmaX * sigmaPX;
+    // const G4double sigmaX = 0.2 * CLHEP::mm;
+    // const G4double sigmaPX = 0.032 * CLHEP::rad;
+    // const G4double corrXPX = -0.9411;
+    // const G4double covXPX = corrXPX * sigmaX * sigmaPX;
 
-    const G4double sigmaY = 0.2 * CLHEP::mm;
-    const G4double sigmaPY = 0.032 * CLHEP::rad;
-    const G4double corrYPY = 0.9411;
-    const G4double covYPY = corrYPY * sigmaY * sigmaPY;
+    // const G4double sigmaY = 0.2 * CLHEP::mm;
+    // const G4double sigmaPY = 0.032 * CLHEP::rad;
+    // const G4double corrYPY = 0.9411;
+    // const G4double covYPY = corrYPY * sigmaY * sigmaPY;
 
-    CLHEP::HepSymMatrix matrixXPX{2};
-    matrixXPX(1, 1) = sigmaX * sigmaX;
-    matrixXPX(2, 2) = sigmaPX * sigmaPX;
-    matrixXPX(1, 2) = matrixXPX(2, 1) = covXPX;
+    // CLHEP::HepSymMatrix matrixXPX{2};
+    // matrixXPX(1, 1) = sigmaX * sigmaX;
+    // matrixXPX(2, 2) = sigmaPX * sigmaPX;
+    // matrixXPX(1, 2) = matrixXPX(2, 1) = covXPX;
 
-    CLHEP::HepSymMatrix matrixYPY{2};
-    matrixYPY(1, 1) = sigmaY * sigmaY;
-    matrixYPY(2, 2) = sigmaPY * sigmaPY;
-    matrixYPY(1, 2) = matrixYPY(2, 1) = covYPY;
+    // CLHEP::HepSymMatrix matrixYPY{2};
+    // matrixYPY(1, 1) = sigmaY * sigmaY;
+    // matrixYPY(2, 2) = sigmaPY * sigmaPY;
+    // matrixYPY(1, 2) = matrixYPY(2, 1) = covYPY;
 
     // primaryGeneratorAction->setBeamProfile(matrixXPX, matrixYPY);
 
-    auto trackingAction = new TrackingAction(runAction);
-    auto eventAction = new EventAction(runAction, trackingAction);
-    auto steppingAction = new SteppingAction(runAction, omitNeutrons);
+    auto trackingAction = new TrackingAction(rootWriter);
+    auto eventAction = new EventAction(rootWriter, trackingAction);
+    auto steppingAction = new SteppingAction(rootWriter, settings);
 
     SetUserAction(runAction);
     SetUserAction(eventAction);

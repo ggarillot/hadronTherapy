@@ -1,6 +1,6 @@
 #include "PrimaryGeneratorAction.h"
 
-#include "RunAction.h"
+#include "RootWriter.h"
 
 #include <CLHEP/Matrix/SymMatrix.h>
 #include <CLHEP/Matrix/Vector.h>
@@ -16,8 +16,8 @@
 #include <Randomize.hh>
 #include <stdexcept>
 
-PrimaryGeneratorAction::PrimaryGeneratorAction(RunAction* runAction, G4String n, G4double e)
-    : runAction(runAction)
+PrimaryGeneratorAction::PrimaryGeneratorAction(RootWriter* rootWriter, G4String n, G4double e)
+    : rootWriter(rootWriter)
     , particleName(n)
     , beamEnergy(e)
 {
@@ -96,11 +96,10 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
     // G4cout << "pos : " << particleGun->GetParticlePosition() / CLHEP::m << " m" << G4endl;
     // G4cout << "mom : " << particleGun->GetParticleMomentumDirection() << G4endl;
-    G4cout << "energy : " << particleGun->GetParticleEnergy() / CLHEP::MeV << G4endl;
+    // G4cout << "energy : " << particleGun->GetParticleEnergy() / CLHEP::MeV << G4endl;
 
-    auto rootWriter = runAction->getRootWriter();
-
-    rootWriter->addBeamProperties(particleGun->GetParticlePosition(), particleGun->GetParticleMomentumDirection());
+    rootWriter->addBeamProperties(particleGun->GetParticlePosition(), particleGun->GetParticleMomentumDirection(),
+                                  particleGun->GetParticleEnergy());
 
     particleGun->GeneratePrimaryVertex(anEvent);
 };

@@ -1,5 +1,6 @@
 #include "SteppingAction.h"
-#include "RunAction.h"
+#include "RootWriter.h"
+#include "Settings.h"
 #include "TrackInformation.h"
 
 #include <CLHEP/Random/Random.h>
@@ -12,9 +13,9 @@
 #include <G4Track.hh>
 #include <G4Types.hh>
 
-SteppingAction::SteppingAction(RunAction* ra, G4bool omitNeutrons)
-    : runAction(ra)
-    , omitNeutrons(omitNeutrons)
+SteppingAction::SteppingAction(RootWriter* rootWriter, const Settings& settings)
+    : rootWriter(rootWriter)
+    , omitNeutrons(settings.omitNeutrons)
 {
 }
 
@@ -40,8 +41,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
     const auto postName = postLogicalVolume->GetName();
 
-    auto rootWriter = runAction->getRootWriter();
-
     if (regionName == "Body")
     {
         HandleBeamInBody(step);
@@ -59,8 +58,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
 void SteppingAction::HandleBeamInBody(const G4Step* step)
 {
-    auto rootWriter = runAction->getRootWriter();
-
     const auto dE = step->GetTotalEnergyDeposit() / MeV;
 
     const auto endPos = step->GetPostStepPoint()->GetPosition() / mm;

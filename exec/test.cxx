@@ -2,6 +2,7 @@
 #include "CLI11.hpp"
 #include "DetectorConstruction.h"
 #include "PhysicsList.h"
+#include "Settings.h"
 
 #include <CLHEP/Units/SystemOfUnits.h>
 #include <TROOT.h>
@@ -22,35 +23,28 @@ int main(int argc, char** argv)
 {
     CLI::App app;
 
-    G4String particleName{};
-    G4String beamEnergyStr{};
-    G4int    seed{};
-    G4int    nEvents{};
-    G4String bodyMaterial{};
-    G4double bodyWidth{};
-    G4int    nThreads{};
-    G4bool   omitNeutrons{false};
+    auto settings = Settings{};
 
-    app.add_option("-N", particleName, "name of the beam particle : proton or carbon")->required();
-    app.add_option("-e", beamEnergyStr, "beam energy")->required();
-    app.add_option("-s", seed, "seed")->required();
-    app.add_option("-n", nEvents, "number of events")->required();
-    app.add_option("-m", bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
-    app.add_option("-b", bodyWidth, "body width in cm")->default_val(10);
-    app.add_option("-t", nThreads, "number of threads")->default_val(1);
-    app.add_flag("--omitNeutrons", omitNeutrons, "do note write neutrons in file");
+    app.add_option("-N", settings.particleName, "name of the beam particle : proton or carbon")->required();
+    app.add_option("-e", settings.beamMeanEnergy, "beam energy in MeV")->required();
+    app.add_option("-s", settings.seed, "seed")->required();
+    app.add_option("-n", settings.nEvents, "number of events")->required();
+    app.add_option("-m", settings.bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
+    app.add_option("-b", settings.bodyWidth, "body width in cm")->default_val(10);
+    app.add_option("-t", settings.nThreads, "number of threads")->default_val(1);
+    app.add_flag("--omitNeutrons", settings.omitNeutrons, "do note write neutrons in file");
 
     CLI11_PARSE(app, argc, argv);
 
     ROOT::EnableThreadSafety();
 
-    G4Random::setTheSeed(seed + 2);
+    G4Random::setTheSeed(settings.seed + 2);
 
     auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::MT);
     // auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
-    runManager->SetNumberOfThreads(nThreads);
+    runManager->SetNumberOfThreads(settings.nThreads);
 
-    runManager->SetUserInitialization(new DetectorConstruction(bodyWidth * CLHEP::cm, bodyMaterial));
+    runManager->SetUserInitialization(new DetectorConstruction(settings));
 
     // G4VModularPhysicsList* phys = new QGSP_BIC_HP;
     G4VModularPhysicsList* phys = new PhysicsList;
@@ -58,10 +52,10 @@ int main(int argc, char** argv)
     runManager->SetUserInitialization(phys);
 
     // User action initialization
-    runManager->SetUserInitialization(new ActionInitialization(particleName, beamEnergyStr, seed, omitNeutrons));
+    runManager->SetUserInitialization(new ActionInitialization(settings));
 
     runManager->Initialize();
-    runManager->BeamOn(nEvents);
+    runManager->BeamOn(settings.nEvents);
 
     delete runManager;
 }

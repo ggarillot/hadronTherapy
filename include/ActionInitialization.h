@@ -4,10 +4,12 @@
 #include <G4VUserActionInitialization.hh>
 #include <globals.hh>
 
+#include "Settings.h"
+
 class ActionInitialization : public G4VUserActionInitialization
 {
   public:
-    ActionInitialization(G4String particleName, G4String beamEnergy, G4int seed, G4bool omitNeutrons = false);
+    ActionInitialization(const Settings& settings);
     ~ActionInitialization() = default;
 
     void BuildForMaster() const override;
@@ -19,5 +21,5 @@ class ActionInitialization : public G4VUserActionInitialization
     G4String particleName{};
     G4double beamEnergy{};
     G4int    seed{};
-    G4bool   omitNeutrons = false;
+    Settings settings{};
 };

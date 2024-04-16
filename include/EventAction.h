@@ -3,7 +3,6 @@
 #include <G4ThreeVector.hh>
 #include <G4Types.hh>
 #include <G4UserEventAction.hh>
-#include <bits/types/clock_t.h>
 #include <globals.hh>
 
 #include <atomic>

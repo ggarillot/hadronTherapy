@@ -26,7 +26,6 @@ class RunAction : public G4UserRunAction
     G4bool   omitNeutrons = false;
 
     std::chrono::steady_clock::time_point beginTime{};
-    std::chrono::steady_clock::time_point refTime{};
 
     std::thread printingThread{};
 };

@@ -2,6 +2,7 @@
 #include "RootWriter.h"
 #include "Settings.h"
 #include "TrackInformation.h"
+#include "TrackingAction.h"
 
 #include <CLHEP/Random/Random.h>
 #include <CLHEP/Units/SystemOfUnits.h>
@@ -12,21 +13,25 @@
 #include <G4SystemOfUnits.hh>
 #include <G4Track.hh>
 #include <G4Types.hh>
+#include <G4ios.hh>
+#include <ROOT/RDF/InterfaceUtils.hxx>
 
-SteppingAction::SteppingAction(RootWriter* rootWriter, const Settings& settings)
+SteppingAction::SteppingAction(RootWriter* rootWriter, TrackingAction* trackingAction, const Settings& settings)
     : rootWriter(rootWriter)
+    , trackingAction(trackingAction)
     , omitNeutrons(settings.omitNeutrons)
 {
 }
 
 void SteppingAction::UserSteppingAction(const G4Step* step)
 {
+    const auto track = step->GetTrack();
     // if the step is exiting the world we don't care
-    if (!step->GetTrack()->GetNextVolume())
+    if (!track->GetNextVolume())
         return;
 
-    const auto trackInfo = dynamic_cast<TrackInformation*>(step->GetTrack()->GetUserInformation());
-    const auto particleDefinition = step->GetTrack()->GetParticleDefinition();
+    const auto trackInfo = dynamic_cast<TrackInformation*>(track->GetUserInformation());
+    const auto particleDefinition = track->GetParticleDefinition();
 
     const auto preStepPoint = step->GetPreStepPoint();
     const auto postStepPoint = step->GetPostStepPoint();
@@ -52,6 +57,15 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
             if (write)
                 rootWriter->addEscapingParticle(step);
+
+            // if (particleDefinition->GetPDGEncoding() == 22)
+            // {
+            //     const auto energy = postStepPoint->GetTotalEnergy();
+            //     const auto initialPosition = trackInfo->initialPosition / CLHEP::mm;
+
+            //     if (energy > 5.9 / CLHEP::MeV && energy < 6.15 / CLHEP::MeV)
+            //         trackingAction->setPrintParticleMemoryMap(true);
+            // }
         }
     }
 }

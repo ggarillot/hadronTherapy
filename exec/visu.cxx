@@ -3,8 +3,6 @@
 #include "DetectorConstruction.h"
 #include "PhysicsList.h"
 
-#include <TROOT.h>
-
 #include <G4RunManagerFactory.hh>
 #include <G4SteppingVerbose.hh>
 #include <G4UImanager.hh>
@@ -40,10 +38,7 @@ int main(int argc, char** argv)
 
     CLI11_PARSE(app, argc, argv);
 
-    G4UIExecutive* ui = nullptr;
-    ui = new G4UIExecutive(argc, argv);
-
-    ROOT::EnableThreadSafety();
+    G4UIExecutive* ui = new G4UIExecutive(argc, argv);
 
     G4Random::setTheSeed(settings.seed + 2);
 

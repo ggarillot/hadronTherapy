@@ -6,12 +6,12 @@
 #include <G4RunManager.hh>
 
 #include <G4ios.hh>
+#include <algorithm>
 #include <chrono>
-#include <cstdlib>
 #include <memory>
-#include <sstream>
-#include <string>
 #include <thread>
+
+#include <G4AnalysisManager.hh>
 
 RunAction::RunAction(const G4String& rootFileName)
     : rootFileName(rootFileName)
@@ -22,19 +22,20 @@ RunAction::RunAction(const G4String& rootFileName)
 void RunAction::BeginOfRunAction(const G4Run*)
 {
     using namespace std::chrono_literals;
-    const auto runManager = G4RunManager::GetRunManager();
-    const auto type = runManager->GetRunManagerType();
 
-    if (type == G4RunManager::masterRM)
+    rootWriter->openRootFile(rootFileName + ".root");
+
+    if (IsMaster())
     {
         beginTime = std::chrono::steady_clock::now();
-        refTime = beginTime;
 
-        const auto threadLoop = [&](const std::chrono::seconds interval) -> void
+        const auto runManager = G4RunManager::GetRunManager();
+        const auto nThreads = runManager->GetNumberOfThreads();
+        const auto nEventsToBeProcessed = runManager->GetNumberOfEventsToBeProcessed();
+
+        const auto threadLoop = [=](std::chrono::duration<double> interval) -> void
         {
-            const auto nEventsToBeProcessed = runManager->GetNumberOfEventsToBeProcessed();
-            const auto nThreads = runManager->GetNumberOfThreads();
-
+            auto refTime = beginTime;
             G4cout << nEventsToBeProcessed << " events on " << nThreads << " threads" << G4endl;
 
             G4int nEventsProcessed = 0;
@@ -53,12 +54,14 @@ void RunAction::BeginOfRunAction(const G4Run*)
                 nEventsLastCheck = nEventsProcessed;
 
                 const auto nEventsPerSec = nEventsDelta / deltaTime.count();
-                const auto timeRemaining = (nEventsToBeProcessed - nEventsProcessed) / nEventsPerSec;
+                const auto timeRemaining = 1s * (nEventsToBeProcessed - nEventsProcessed) / nEventsPerSec;
 
                 G4cout << nEventsProcessed << "/" << nEventsToBeProcessed << " events \t total time "
                        << totalTime.count() << " s "
-                       << "\t" << nEventsPerSec << " events/s \t time remaining : " << timeRemaining << " s" << G4endl;
+                       << "\t" << nEventsPerSec << " events/s \t time remaining : " << timeRemaining.count() << " s"
+                       << G4endl;
 
+                interval = 1s * std::min(interval.count(), (1.1 * timeRemaining).count());
                 std::this_thread::sleep_for(interval);
             }
         };
@@ -66,50 +69,19 @@ void RunAction::BeginOfRunAction(const G4Run*)
         printingThread = std::thread(threadLoop, 2s);
         return;
     }
-
-    if (type == G4RunManager::workerRM)
-        rootFileName += "_T" + std::to_string(G4Threading::G4GetThreadId());
-
-    rootWriter->openRootFile(rootFileName + ".root");
 }
 
 void RunAction::EndOfRunAction(const G4Run*)
 {
-    const auto runManager = G4RunManager::GetRunManager();
-    const auto type = runManager->GetRunManagerType();
+    rootWriter->closeRootFile();
 
-    if (rootWriter)
+    if (IsMaster())
     {
-        rootWriter->closeRootFile();
-        // G4cout << "RootFileDeleted" << G4endl;
-    }
-
-    if (type == G4RunManager::masterRM)
-    {
+        printingThread.join();
         const auto                          now = std::chrono::steady_clock::now();
         const std::chrono::duration<double> totalTime = now - beginTime;
 
         const auto nEventsProcessed = EventAction::getNEventsProcessed();
         G4cout << nEventsProcessed << " events processed in " << totalTime.count() << " s" << G4endl;
-
-        printingThread.join();
-
-        std::stringstream haddCmd;
-        haddCmd << "hadd -j " << runManager->GetNumberOfThreads() << " -f " << rootFileName << ".root " << rootFileName
-                << "_T*";
-        const auto haddReturn = system(haddCmd.str().c_str());
-
-        G4cout << haddReturn << G4endl;
-
-        if (haddReturn == 0)
-        {
-            std::stringstream cleanCmd;
-            cleanCmd << "rm " << rootFileName << "_T*";
-            system(cleanCmd.str().c_str());
-        }
     }
-    else if (type == G4RunManager::workerRM)
-        G4cout << "end Worker" << G4endl;
-    else
-        G4cout << "end Sequential" << G4endl;
 }

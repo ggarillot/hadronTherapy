@@ -12,7 +12,7 @@ class TrackingAction;
 class SteppingAction : public G4UserSteppingAction
 {
   public:
-    SteppingAction(RootWriter* rootWriter, const Settings& settings);
+    SteppingAction(RootWriter* rootWriter, TrackingAction* trackingAction, const Settings& settings);
 
     void UserSteppingAction(const G4Step* step) override;
 
@@ -20,6 +20,7 @@ class SteppingAction : public G4UserSteppingAction
     void HandleBeamInBody(const G4Step* step);
 
   protected:
-    RootWriter* rootWriter = nullptr;
-    G4bool      omitNeutrons = false;
+    RootWriter*     rootWriter = nullptr;
+    TrackingAction* trackingAction = nullptr;
+    G4bool          omitNeutrons = false;
 };

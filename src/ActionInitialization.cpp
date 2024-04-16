@@ -67,7 +67,7 @@ void ActionInitialization::Build() const
 
     auto trackingAction = new TrackingAction(rootWriter);
     auto eventAction = new EventAction(rootWriter, trackingAction);
-    auto steppingAction = new SteppingAction(rootWriter, settings);
+    auto steppingAction = new SteppingAction(rootWriter, trackingAction, settings);
 
     SetUserAction(runAction);
     SetUserAction(eventAction);

@@ -14,7 +14,7 @@
 
 DetectorConstruction::DetectorConstruction(const Settings& settings)
 {
-    bodyWidth = settings.bodyWidth;
+    bodyWidth = settings.bodyWidth * CLHEP::cm;
     if (bodyWidth < 0)
         throw;
 

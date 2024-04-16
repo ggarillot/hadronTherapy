@@ -5,7 +5,6 @@
 #include "Settings.h"
 
 #include <CLHEP/Units/SystemOfUnits.h>
-#include <TROOT.h>
 
 #include <G4RunManagerFactory.hh>
 #include <G4SteppingVerbose.hh>
@@ -36,12 +35,10 @@ int main(int argc, char** argv)
 
     CLI11_PARSE(app, argc, argv);
 
-    ROOT::EnableThreadSafety();
-
     G4Random::setTheSeed(settings.seed + 2);
 
     auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::MT);
-    // auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
+    // auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly);
     runManager->SetNumberOfThreads(settings.nThreads);
 
     runManager->SetUserInitialization(new DetectorConstruction(settings));

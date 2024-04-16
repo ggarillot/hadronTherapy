@@ -24,8 +24,10 @@ void EventAction::EndOfEventAction(const G4Event*)
 {
     rootWriter->fillTree();
 
+    // if (trackingAction->doPrintParticleMemoryMap())
+    //     trackingAction->printParticleMemory();
+
     trackingAction->reset();
 
     nEventsProcessed++;
-    // runAction->update(nEventsElapsed);
 }

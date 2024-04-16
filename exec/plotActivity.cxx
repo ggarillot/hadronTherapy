@@ -65,7 +65,8 @@ int main(int argc, char** argv)
     auto inputFile = TFile::Open(fileName.c_str(), "READ");
     auto inputTree = dynamic_cast<TTree*>(inputFile->Get("tree"));
 
-    const auto histoDose = dynamic_cast<TH1D*>(inputFile->Get("histo"));
+    const auto histoDose2D = dynamic_cast<TH2D*>(inputFile->Get("hs"));
+    const auto histoDose = histoDose2D->ProjectionX();
     histoDose->SetLineWidth(3);
     histoDose->SetLineStyle(2);
     histoDose->SetLineColor(kRed);
@@ -99,21 +100,25 @@ int main(int argc, char** argv)
     auto timeFilter = [&](const double& eventTime, const ROOT::VecOps::RVec<double>& time) -> ROOT::VecOps::RVec<bool>
     { return ((eventTime + time) > timeBegin) && ((eventTime + time) < timeEnd); };
 
-    auto O_Filter = [&](const ROOT::VecOps::RVec<int>& id) -> ROOT::VecOps::RVec<bool> { return id == 8; };
-    auto C_Filter = [&](const ROOT::VecOps::RVec<int>& id) -> ROOT::VecOps::RVec<bool> { return id == 6; };
-    auto N_Filter = [&](const ROOT::VecOps::RVec<int>& id) -> ROOT::VecOps::RVec<bool> { return id == 7; };
+    auto O_Filter = [&](const ROOT::VecOps::RVec<int>& Z, const ROOT::VecOps::RVec<int>& A) -> ROOT::VecOps::RVec<bool>
+    { return Z == 8 && A == 15; };
+    auto C_Filter = [&](const ROOT::VecOps::RVec<int>& Z, const ROOT::VecOps::RVec<int>& A) -> ROOT::VecOps::RVec<bool>
+    { return Z == 6 && A == 11; };
+    auto N_Filter = [&](const ROOT::VecOps::RVec<int>& Z, const ROOT::VecOps::RVec<int>& A) -> ROOT::VecOps::RVec<bool>
+    { return Z == 7 && A == 13; };
 
     data = data.Define("maskT", timeFilter, {"eventTime", "t"});
 
     auto maskFuncI = [](const ROOT::RVec<int>& vec, const ROOT::RVec<bool>& mask) { return vec[mask]; };
     auto maskFuncD = [](const ROOT::RVec<double>& vec, const ROOT::RVec<bool>& mask) { return vec[mask]; };
 
-    auto dataTimeFiltered =
-        data.Define("zTimeFilter", maskFuncD, {"z", "maskT"}).Define("idTimeFilter", maskFuncI, {"id", "maskT"});
+    auto dataTimeFiltered = data.Define("zPosTimeFilter", maskFuncD, {"z", "maskT"})
+                                .Define("aTimeFilter", maskFuncI, {"A", "maskT"})
+                                .Define("zTimeFilter", maskFuncI, {"Z", "maskT"});
 
-    dataTimeFiltered = dataTimeFiltered.Define("maskO", O_Filter, {"idTimeFilter"});
-    dataTimeFiltered = dataTimeFiltered.Define("maskC", C_Filter, {"idTimeFilter"});
-    dataTimeFiltered = dataTimeFiltered.Define("maskN", N_Filter, {"idTimeFilter"});
+    dataTimeFiltered = dataTimeFiltered.Define("maskO", O_Filter, {"zTimeFilter", "aTimeFilter"});
+    dataTimeFiltered = dataTimeFiltered.Define("maskC", C_Filter, {"zTimeFilter", "aTimeFilter"});
+    dataTimeFiltered = dataTimeFiltered.Define("maskN", N_Filter, {"zTimeFilter", "aTimeFilter"});
 
     unsigned long long nCalled = 0;
 
@@ -134,24 +139,24 @@ int main(int argc, char** argv)
     };
 
     if (precision < std::numeric_limits<double>::epsilon())
-        dataTimeFiltered = dataTimeFiltered.Define("zDetected", "zTimeFilter");
+        dataTimeFiltered = dataTimeFiltered.Define("zPosDetected", "zPosTimeFilter");
     else
-        dataTimeFiltered = dataTimeFiltered.Define("zDetected", simulPrecision, {"zTimeFilter"});
+        dataTimeFiltered = dataTimeFiltered.Define("zPosDetected", simulPrecision, {"zPosTimeFilter"});
 
     std::cout << "before mean " << nCalled << std::endl;
 
     // std::cout << dataTimeFiltered.Mean("zDetected").GetValue() << std::endl;
 
-    dataTimeFiltered = dataTimeFiltered.Define("zDetectedO", maskFuncD, {"zDetected", "maskO"})
-                           .Define("zDetectedC", maskFuncD, {"zDetected", "maskC"})
-                           .Define("zDetectedN", maskFuncD, {"zDetected", "maskN"});
+    dataTimeFiltered = dataTimeFiltered.Define("zPosDetectedO", maskFuncD, {"zPosDetected", "maskO"})
+                           .Define("zPosDetectedC", maskFuncD, {"zPosDetected", "maskC"})
+                           .Define("zPosDetectedN", maskFuncD, {"zPosDetected", "maskN"});
 
     const ROOT::RDF::TH1DModel model = {"", ";depth [mm]; Activity [arbitrary units]", nBins, 0, braggPeakDepth * 1.4};
 
-    auto histoAll = dataTimeFiltered.Histo1D(model, {"zDetected"});
-    auto histoO = dataTimeFiltered.Histo1D(model, {"zDetectedO"});
-    auto histoC = dataTimeFiltered.Histo1D(model, {"zDetectedC"});
-    auto histoN = dataTimeFiltered.Histo1D(model, {"zDetectedN"});
+    auto histoAll = dataTimeFiltered.Histo1D(model, {"zPosDetected"});
+    auto histoO = dataTimeFiltered.Histo1D(model, {"zPosDetectedO"});
+    auto histoC = dataTimeFiltered.Histo1D(model, {"zPosDetectedC"});
+    auto histoN = dataTimeFiltered.Histo1D(model, {"zPosDetectedN"});
 
     std::cout << "before histoAll " << nCalled << std::endl;
     ROOT::RDF::RunGraphs({histoAll, histoC, histoN, histoO});

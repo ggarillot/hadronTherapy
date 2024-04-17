@@ -51,7 +51,7 @@ void TrackingAction::PreUserTrackingAction(const G4Track* track)
 
     track->SetUserInformation(trackInfo);
 
-    if (particleDefinition->GetPDGEncoding() > 1000000000)
+    if (particleDefinition->GetAtomicNumber() > 0)
         rootWriter->addNuclei(particleDefinition, initialPosition);
 
     if (particleDefinition->GetPDGEncoding() == -11)

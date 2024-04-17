@@ -16,10 +16,10 @@
 #include <Randomize.hh>
 #include <stdexcept>
 
-PrimaryGeneratorAction::PrimaryGeneratorAction(RootWriter* rootWriter, G4String n, G4double e)
+PrimaryGeneratorAction::PrimaryGeneratorAction(RootWriter* rootWriter, const Settings& settings)
     : rootWriter(rootWriter)
-    , particleName(n)
-    , beamEnergy(e)
+    , particleName(settings.particleName)
+    , beamEnergy(settings.beamMeanEnergy * CLHEP::MeV)
 {
     if (particleName != "proton" && particleName != "carbon")
         throw std::logic_error("proton or carbon only");
@@ -31,7 +31,10 @@ PrimaryGeneratorAction::PrimaryGeneratorAction(RootWriter* rootWriter, G4String 
     particleGun->SetParticleMomentumDirection({0, 0, 1});
     particleGun->SetParticlePosition({0, 0, -20 * CLHEP::cm});
 
-    G4cout << "Beam energy is " << beamEnergy / CLHEP::MeV << " MeV/u" << G4endl;
+    const auto threadID = G4Threading::G4GetThreadId();
+
+    if (threadID < 1)
+        G4cout << particleName << " beam at " << beamEnergy / CLHEP::MeV << " MeV/u" << G4endl;
 }
 
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
@@ -60,17 +63,14 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     if (particleDefinition->GetPDGEncoding() == 0) // if it is a geantino, the particle def was never set yet
     {
         if (particleName == "proton")
-        {
             particleDefinition = G4ParticleTable::GetParticleTable()->FindParticle("proton");
-            particleGun->SetParticleEnergy(beamEnergy);
-        }
         else
-        {
             particleDefinition = G4IonTable::GetIonTable()->GetIon(1000060120);
-            particleGun->SetParticleEnergy(beamEnergy * 12);
-        }
 
         particleGun->SetParticleDefinition(particleDefinition);
+
+        const auto baryonNumber = particleDefinition->GetBaryonNumber();
+        particleGun->SetParticleEnergy(beamEnergy * baryonNumber);
     }
 
     if (randMultiGaussX)
@@ -98,8 +98,9 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     // G4cout << "mom : " << particleGun->GetParticleMomentumDirection() << G4endl;
     // G4cout << "energy : " << particleGun->GetParticleEnergy() / CLHEP::MeV << G4endl;
 
-    rootWriter->addBeamProperties(particleGun->GetParticlePosition(), particleGun->GetParticleMomentumDirection(),
-                                  particleGun->GetParticleEnergy());
+    rootWriter->addBeamProperties(
+        particleGun->GetParticlePosition() / CLHEP::mm, particleGun->GetParticleMomentumDirection(),
+        particleGun->GetParticleEnergy() / CLHEP::MeV / particleDefinition->GetBaryonNumber());
 
     particleGun->GeneratePrimaryVertex(anEvent);
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "RootWriter.h"
+#include "Settings.h"
+
 #include <G4VUserPrimaryGeneratorAction.hh>
 
 #include <globals.hh>
@@ -14,7 +16,7 @@ class RootWriter;
 class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
-    PrimaryGeneratorAction(RootWriter* rootWriter, G4String particleName, G4double beamEnergy);
+    PrimaryGeneratorAction(RootWriter* rootWriter, const Settings& settings);
     ~PrimaryGeneratorAction();
 
     void setBeamProfile(const CLHEP::HepSymMatrix& matrixXPX, const CLHEP::HepSymMatrix& matrixYPY);

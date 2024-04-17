@@ -48,7 +48,7 @@ void ActionInitialization::Build() const
 
     auto rootWriter = runAction->getRootWriter();
 
-    auto primaryGeneratorAction = new PrimaryGeneratorAction(rootWriter, particleName, beamEnergy);
+    auto primaryGeneratorAction = new PrimaryGeneratorAction(rootWriter, settings);
     SetUserAction(primaryGeneratorAction);
 
     // const G4double sigmaX = 0.2 * CLHEP::mm;

@@ -1,5 +1,6 @@
 #include "RootWriter.h"
 
+#include <CLHEP/Units/SystemOfUnits.h>
 #include <G4AnalysisManager.hh>
 #include <G4RunManager.hh>
 #include <G4Step.hh>
@@ -77,7 +78,8 @@ void RootWriter::createHistograms()
     id_beamPosZ = analysisManager->CreateNtupleDColumn(id_beamTree, "z");
     id_beamMomX = analysisManager->CreateNtupleDColumn(id_beamTree, "momX");
     id_beamMomY = analysisManager->CreateNtupleDColumn(id_beamTree, "momY");
-    id_beamEnergy = analysisManager->CreateNtupleDColumn(id_beamTree, "momZ");
+    id_beamMomZ = analysisManager->CreateNtupleDColumn(id_beamTree, "momZ");
+    id_beamEnergy = analysisManager->CreateNtupleDColumn(id_beamTree, "e");
 
     analysisManager->FinishNtuple(id_beamTree);
 }
@@ -147,7 +149,7 @@ void RootWriter::addEscapingParticle(const G4Step* step)
     initialZEscaping.push_back(initialPosition.z());
 }
 
-void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, G4double energy)
+void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, const G4double energy)
 {
     analysisManager->FillNtupleDColumn(id_beamTree, id_beamPosX, pos.x());
     analysisManager->FillNtupleDColumn(id_beamTree, id_beamPosY, pos.y());

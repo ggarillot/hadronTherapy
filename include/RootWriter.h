@@ -25,7 +25,7 @@ class RootWriter
 
     void addEscapingParticle(const G4Step* step);
 
-    void addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, G4double energy);
+    void addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, const G4double energy);
 
     void addStepLength(const G4double stepLength);
 

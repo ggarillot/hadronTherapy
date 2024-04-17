@@ -33,7 +33,9 @@ void RootWriter::closeRootFile()
 
 void RootWriter::createHistograms()
 {
-    id_edepHisto = analysisManager->CreateH2("hs", "Deposited energy;z (mm);x (mm)", 1000, 0, 300, 1000, -150, 150);
+    id_edepHisto = analysisManager->CreateH2("hs", "Deposited energy", 1000, 0, 300, 1000, -150, 150);
+    analysisManager->SetH2XAxisTitle(id_edepHisto, "z(mm)");
+    analysisManager->SetH2YAxisTitle(id_edepHisto, "x(mm)");
 
     id_tree = analysisManager->CreateNtuple("tree", "tree");
     id_eventID = analysisManager->CreateNtupleIColumn(id_tree, "eventID");

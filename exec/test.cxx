@@ -29,7 +29,7 @@ int main(int argc, char** argv)
     app.add_option("-s", settings.seed, "seed")->required();
     app.add_option("-n", settings.nEvents, "number of events")->required();
     app.add_option("-m", settings.bodyMaterial, "body material : water of waterGel")->default_val("waterGel");
-    app.add_option("-b", settings.bodyWidth, "body width in cm")->default_val(10);
+    app.add_option("-b", settings.bodyWidth, "body width in cm")->default_val(15);
     app.add_option("-t", settings.nThreads, "number of threads")->default_val(1);
     app.add_flag("--omitNeutrons", settings.omitNeutrons, "do note write neutrons in file");
 

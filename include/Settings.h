@@ -16,7 +16,7 @@ struct Settings
     G4double sigmaEnergy = 0;
 
     G4String bodyMaterial = "waterGel";
-    G4double bodyWidth = 10 * CLHEP::cm;
+    G4double bodyWidth = 15 * CLHEP::cm;
 
     G4bool omitNeutrons = false;
 };

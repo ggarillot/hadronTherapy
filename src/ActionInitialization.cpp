@@ -11,6 +11,7 @@
 #include <string>
 
 #include <G4RunManager.hh>
+#include <G4String.hh>
 
 ActionInitialization::ActionInitialization(const Settings& settings)
     : settings(settings)
@@ -20,8 +21,15 @@ ActionInitialization::ActionInitialization(const Settings& settings)
     if (particleName != "proton" && particleName != "carbon")
         throw std::logic_error("proton or carbon only");
 
+    if (settings.bodyMaterial != "water" && settings.bodyMaterial != "waterGel")
+        throw std::logic_error("water or waterGel only");
+
+    G4String bodyType = "w";
+    if (settings.bodyMaterial == "waterGel")
+        bodyType = "wg";
+
     std::stringstream sstr;
-    sstr << particleName << "_" << int(std::round(settings.beamMeanEnergy)) << "_" << seed;
+    sstr << particleName << "_" << int(std::round(settings.beamMeanEnergy)) << "_" << bodyType << "_" << seed;
     baseRootFileName = sstr.str();
 
     // beamEnergy = stod(b) * CLHEP::MeV;

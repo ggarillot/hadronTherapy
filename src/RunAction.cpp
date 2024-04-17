@@ -82,6 +82,7 @@ void RunAction::EndOfRunAction(const G4Run*)
         const std::chrono::duration<double> totalTime = now - beginTime;
 
         const auto nEventsProcessed = EventAction::getNEventsProcessed();
-        G4cout << nEventsProcessed << " events processed in " << totalTime.count() << " s" << G4endl;
+        G4cout << nEventsProcessed << " events processed in " << totalTime.count()
+               << " s : " << nEventsProcessed / totalTime.count() << " events/s" << G4endl;
     }
 }

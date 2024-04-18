@@ -47,29 +47,29 @@ class RootWriter
     G4int id_primaryEndY{};
     G4int id_primaryEndZ{};
 
-    std::vector<int>    AVec{};
-    std::vector<int>    ZVec{};
-    std::vector<double> xVec{};
-    std::vector<double> yVec{};
-    std::vector<double> zVec{};
-    std::vector<double> tVec{};
+    std::vector<int>   AVec{};
+    std::vector<int>   ZVec{};
+    std::vector<float> xVec{};
+    std::vector<float> yVec{};
+    std::vector<float> zVec{};
+    std::vector<float> tVec{};
 
-    std::vector<int>    pdgEscaping{};
-    std::vector<double> xEscaping{};
-    std::vector<double> yEscaping{};
-    std::vector<double> zEscaping{};
-    std::vector<double> thetaEscaping{};
-    std::vector<double> phiEscaping{};
-    std::vector<double> eEscaping{};
-    std::vector<double> timeEscaping{};
-    std::vector<double> initialXEscaping{};
-    std::vector<double> initialYEscaping{};
-    std::vector<double> initialZEscaping{};
-    std::vector<int>    nucleiA{};
-    std::vector<int>    nucleiZ{};
-    std::vector<double> nucleiXPos{};
-    std::vector<double> nucleiYPos{};
-    std::vector<double> nucleiZPos{};
+    std::vector<int>   pdgEscaping{};
+    std::vector<float> xEscaping{};
+    std::vector<float> yEscaping{};
+    std::vector<float> zEscaping{};
+    std::vector<float> thetaEscaping{};
+    std::vector<float> phiEscaping{};
+    std::vector<float> eEscaping{};
+    std::vector<float> timeEscaping{};
+    std::vector<float> initialXEscaping{};
+    std::vector<float> initialYEscaping{};
+    std::vector<float> initialZEscaping{};
+    std::vector<int>   nucleiA{};
+    std::vector<int>   nucleiZ{};
+    std::vector<float> nucleiXPos{};
+    std::vector<float> nucleiYPos{};
+    std::vector<float> nucleiZPos{};
 
     G4int id_beamTree{};
 

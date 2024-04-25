@@ -98,9 +98,8 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     // G4cout << "mom : " << particleGun->GetParticleMomentumDirection() << G4endl;
     // G4cout << "energy : " << particleGun->GetParticleEnergy() / CLHEP::MeV << G4endl;
 
-    rootWriter->addBeamProperties(
-        particleGun->GetParticlePosition() / CLHEP::mm, particleGun->GetParticleMomentumDirection(),
-        particleGun->GetParticleEnergy() / CLHEP::MeV / particleDefinition->GetBaryonNumber());
+    rootWriter->addBeamProperties(particleGun->GetParticlePosition(), particleGun->GetParticleMomentumDirection(),
+                                  particleGun->GetParticleEnergy() / particleDefinition->GetBaryonNumber());
 
     particleGun->GeneratePrimaryVertex(anEvent);
 };

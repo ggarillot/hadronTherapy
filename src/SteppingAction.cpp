@@ -72,10 +72,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
 void SteppingAction::HandleBeamInBody(const G4Step* step)
 {
-    const auto dE = step->GetTotalEnergyDeposit() / MeV;
+    const auto dE = step->GetTotalEnergyDeposit();
 
-    const auto endPos = step->GetPostStepPoint()->GetPosition() / mm;
-    const auto beginPos = step->GetPreStepPoint()->GetPosition() / mm;
+    const auto endPos = step->GetPostStepPoint()->GetPosition();
+    const auto beginPos = step->GetPreStepPoint()->GetPosition();
 
     const auto pos = CLHEP::HepRandom()() * (endPos - beginPos) + beginPos;
 

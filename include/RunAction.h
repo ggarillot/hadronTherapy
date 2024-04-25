@@ -4,6 +4,7 @@
 
 #include <G4UserRunAction.hh>
 
+#include "Settings.h"
 #include <chrono>
 #include <thread>
 
@@ -12,7 +13,7 @@ class G4Run;
 class RunAction : public G4UserRunAction
 {
   public:
-    RunAction(const G4String& rootFileName);
+    RunAction(const Settings& settings);
 
     void BeginOfRunAction(const G4Run* run) override;
     void EndOfRunAction(const G4Run* run) override;
@@ -22,8 +23,7 @@ class RunAction : public G4UserRunAction
   protected:
     std::unique_ptr<RootWriter> rootWriter = nullptr;
 
-    G4String rootFileName{};
-    G4bool   omitNeutrons = false;
+    Settings settings{};
 
     std::chrono::steady_clock::time_point beginTime{};
 

@@ -84,8 +84,5 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     auto bodyRegion = new G4Region("Body");
     bodyRegion->AddRootLogicalVolume(logicBody);
 
-    // auto limits = logicBody->GetUserLimits();
-    // limits.get
-
     return physWorld;
 }

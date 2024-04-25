@@ -16,10 +16,5 @@ class ActionInitialization : public G4VUserActionInitialization
     void Build() const override;
 
   protected:
-    G4String baseRootFileName{};
-
-    G4String particleName{};
-    G4double beamEnergy{};
-    G4int    seed{};
     Settings settings{};
 };

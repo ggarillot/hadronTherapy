@@ -1,6 +1,7 @@
 #include "RunAction.h"
 #include "EventAction.h"
 #include "RootWriter.h"
+#include "Settings.h"
 
 #include <G4Run.hh>
 #include <G4RunManager.hh>
@@ -13,15 +14,26 @@
 
 #include <G4AnalysisManager.hh>
 
-RunAction::RunAction(const G4String& rootFileName)
-    : rootFileName(rootFileName)
+RunAction::RunAction(const Settings& settings)
+    : settings(settings)
 {
-    rootWriter = std::make_unique<RootWriter>();
+    rootWriter = std::make_unique<RootWriter>(settings);
 }
 
 void RunAction::BeginOfRunAction(const G4Run*)
 {
     using namespace std::chrono_literals;
+
+    G4String bodyType = "w";
+    if (settings.bodyMaterial == "waterGel")
+        bodyType = "wg";
+    std::stringstream sstr;
+    sstr << settings.particleName << "_" << int(std::round(settings.beamMeanEnergy)) << "_" << bodyType << "_"
+         << settings.seed;
+    if (settings.minimalTreeForTransverseGammas)
+        sstr << "_gm";
+
+    auto rootFileName = sstr.str();
 
     rootWriter->openRootFile(rootFileName + ".root");
 

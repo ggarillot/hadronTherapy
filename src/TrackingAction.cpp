@@ -26,7 +26,7 @@ void TrackingAction::PreUserTrackingAction(const G4Track* track)
     const auto initialEnergy = track->GetKineticEnergy();
 
     const auto initialPosition = track->GetPosition();
-    const auto initialTime = track->GetGlobalTime() / CLHEP::s;
+    const auto initialTime = track->GetGlobalTime();
 
     auto particleMemory = ParticleMemory{};
     particleMemory.initialPosition = initialPosition;
@@ -68,7 +68,7 @@ void TrackingAction::PostUserTrackingAction(const G4Track* track)
     if (track->GetTrackID() != 1)
         return;
 
-    rootWriter->setPrimaryEnd(track->GetPosition() / CLHEP::mm);
+    rootWriter->setPrimaryEnd(track->GetPosition());
 }
 
 void TrackingAction::printParticleMemory() const

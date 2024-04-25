@@ -19,4 +19,7 @@ struct Settings
     G4double bodyWidth = 15 * CLHEP::cm;
 
     G4bool omitNeutrons = false;
+
+    G4bool beamTree = false;
+    G4bool minimalTreeForTransverseGammas = false;
 };

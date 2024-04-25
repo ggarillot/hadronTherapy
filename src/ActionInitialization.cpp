@@ -8,7 +8,6 @@
 
 #include <CLHEP/Units/SystemOfUnits.h>
 #include <stdexcept>
-#include <string>
 
 #include <G4RunManager.hh>
 #include <G4String.hh>
@@ -16,35 +15,22 @@
 ActionInitialization::ActionInitialization(const Settings& settings)
     : settings(settings)
 {
-    particleName = settings.particleName;
-    seed = settings.seed;
-    if (particleName != "proton" && particleName != "carbon")
+    if (settings.particleName != "proton" && settings.particleName != "carbon")
         throw std::logic_error("proton or carbon only");
 
     if (settings.bodyMaterial != "water" && settings.bodyMaterial != "waterGel")
         throw std::logic_error("water or waterGel only");
-
-    G4String bodyType = "w";
-    if (settings.bodyMaterial == "waterGel")
-        bodyType = "wg";
-
-    std::stringstream sstr;
-    sstr << particleName << "_" << int(std::round(settings.beamMeanEnergy)) << "_" << bodyType << "_" << seed;
-    baseRootFileName = sstr.str();
-
-    // beamEnergy = stod(b) * CLHEP::MeV;
-    beamEnergy = settings.beamMeanEnergy;
 }
 
 void ActionInitialization::BuildForMaster() const
 {
-    auto runAction = new RunAction(baseRootFileName);
+    auto runAction = new RunAction(settings);
     SetUserAction(runAction);
 }
 
 void ActionInitialization::Build() const
 {
-    auto runAction = new RunAction(baseRootFileName);
+    auto runAction = new RunAction(settings);
 
     auto rootWriter = runAction->getRootWriter();
 

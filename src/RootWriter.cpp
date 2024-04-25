@@ -6,9 +6,11 @@
 #include <G4Step.hh>
 #include <G4ios.hh>
 
+#include "Settings.h"
 #include "TrackInformation.h"
 
-RootWriter::RootWriter()
+RootWriter::RootWriter(const Settings& settings)
+    : settings(settings)
 {
     analysisManager = G4AnalysisManager::Instance();
     analysisManager->SetVerboseLevel(0);
@@ -18,8 +20,6 @@ RootWriter::RootWriter()
 
     if (type != G4RunManager::sequentialRM)
         analysisManager->SetNtupleMerging(true);
-
-    analysisManager->SetActivation(true);
 }
 
 void RootWriter::openRootFile(const G4String& name)
@@ -41,20 +41,32 @@ void RootWriter::createHistograms()
     analysisManager->SetH2YAxisTitle(id_edepHisto, "x(mm)");
 
     id_tree = analysisManager->CreateNtuple("tree", "tree");
-    id_eventID = analysisManager->CreateNtupleIColumn(id_tree, "eventID");
-    id_primaryEndX = analysisManager->CreateNtupleFColumn(id_tree, "primaryEndX");
-    id_primaryEndY = analysisManager->CreateNtupleFColumn(id_tree, "primaryEndY");
-    id_primaryEndZ = analysisManager->CreateNtupleFColumn(id_tree, "primaryEndZ");
 
-    // positron emission
-    analysisManager->CreateNtupleIColumn(id_tree, "A", AVec);
-    analysisManager->CreateNtupleIColumn(id_tree, "Z", ZVec);
-    analysisManager->CreateNtupleFColumn(id_tree, "x", xVec);
-    analysisManager->CreateNtupleFColumn(id_tree, "y", yVec);
-    analysisManager->CreateNtupleFColumn(id_tree, "z", zVec);
-    analysisManager->CreateNtupleFColumn(id_tree, "t", tVec);
+    if (!settings.minimalTreeForTransverseGammas)
+    {
+        id_eventID = analysisManager->CreateNtupleIColumn(id_tree, "eventID");
+        id_primaryEndX = analysisManager->CreateNtupleFColumn(id_tree, "primaryEndX");
+        id_primaryEndY = analysisManager->CreateNtupleFColumn(id_tree, "primaryEndY");
+        id_primaryEndZ = analysisManager->CreateNtupleFColumn(id_tree, "primaryEndZ");
 
-    analysisManager->CreateNtupleIColumn(id_tree, "pdgEsc", pdgEscaping);
+        // positron emission
+        analysisManager->CreateNtupleIColumn(id_tree, "A", AVec);
+        analysisManager->CreateNtupleIColumn(id_tree, "Z", ZVec);
+        analysisManager->CreateNtupleFColumn(id_tree, "x", xVec);
+        analysisManager->CreateNtupleFColumn(id_tree, "y", yVec);
+        analysisManager->CreateNtupleFColumn(id_tree, "z", zVec);
+        analysisManager->CreateNtupleFColumn(id_tree, "t", tVec);
+
+        // general nuclei position
+        analysisManager->CreateNtupleIColumn(id_tree, "nucleiA", nucleiA);
+        analysisManager->CreateNtupleIColumn(id_tree, "nucleiZ", nucleiZ);
+        analysisManager->CreateNtupleFColumn(id_tree, "nucleiXPos", nucleiXPos);
+        analysisManager->CreateNtupleFColumn(id_tree, "nucleiYPos", nucleiYPos);
+        analysisManager->CreateNtupleFColumn(id_tree, "nucleiZPos", nucleiZPos);
+
+        analysisManager->CreateNtupleIColumn(id_tree, "pdgEsc", pdgEscaping);
+    }
+
     analysisManager->CreateNtupleFColumn(id_tree, "xEsc", xEscaping);
     analysisManager->CreateNtupleFColumn(id_tree, "yEsc", yEscaping);
     analysisManager->CreateNtupleFColumn(id_tree, "zEsc", zEscaping);
@@ -65,52 +77,48 @@ void RootWriter::createHistograms()
     analysisManager->CreateNtupleFColumn(id_tree, "initialXEsc", initialXEscaping);
     analysisManager->CreateNtupleFColumn(id_tree, "initialYEsc", initialYEscaping);
     analysisManager->CreateNtupleFColumn(id_tree, "initialZEsc", initialZEscaping);
-    analysisManager->CreateNtupleIColumn(id_tree, "nucleiA", nucleiA);
-    analysisManager->CreateNtupleIColumn(id_tree, "nucleiZ", nucleiZ);
-    analysisManager->CreateNtupleFColumn(id_tree, "nucleiXPos", nucleiXPos);
-    analysisManager->CreateNtupleFColumn(id_tree, "nucleiYPos", nucleiYPos);
-    analysisManager->CreateNtupleFColumn(id_tree, "nucleiZPos", nucleiZPos);
+
+    if (settings.beamTree)
+    {
+        id_beamPosX = analysisManager->CreateNtupleFColumn(id_tree, "beamX");
+        id_beamPosY = analysisManager->CreateNtupleFColumn(id_tree, "beamY");
+        id_beamPosZ = analysisManager->CreateNtupleFColumn(id_tree, "beamZ");
+        id_beamMomX = analysisManager->CreateNtupleFColumn(id_tree, "beamPX");
+        id_beamMomY = analysisManager->CreateNtupleFColumn(id_tree, "beamPY");
+        id_beamMomZ = analysisManager->CreateNtupleFColumn(id_tree, "beamPZ");
+        id_beamEnergy = analysisManager->CreateNtupleFColumn(id_tree, "beamE");
+    }
 
     analysisManager->FinishNtuple(id_tree);
-
-    id_beamTree = analysisManager->CreateNtuple("beamTree", "beamTree");
-
-    id_beamPosX = analysisManager->CreateNtupleFColumn(id_beamTree, "x");
-    id_beamPosY = analysisManager->CreateNtupleFColumn(id_beamTree, "y");
-    id_beamPosZ = analysisManager->CreateNtupleFColumn(id_beamTree, "z");
-    id_beamMomX = analysisManager->CreateNtupleFColumn(id_beamTree, "momX");
-    id_beamMomY = analysisManager->CreateNtupleFColumn(id_beamTree, "momY");
-    id_beamMomZ = analysisManager->CreateNtupleFColumn(id_beamTree, "momZ");
-    id_beamEnergy = analysisManager->CreateNtupleFColumn(id_beamTree, "e");
-
-    analysisManager->FinishNtuple(id_beamTree);
-
-    // analysisManager->SetH2Activation(id_edepHisto, false);
-    // analysisManager->SetNtupleActivation(id_tree, false);
-    // analysisManager->SetNtupleActivation(id_beamTree, false);
 }
 
 void RootWriter::setEventNumber(const G4int eventNumber)
 {
+    if (settings.minimalTreeForTransverseGammas)
+        return;
     analysisManager->FillNtupleIColumn(id_tree, id_eventID, eventNumber);
 }
 
 void RootWriter::addEdep(const CLHEP::Hep3Vector& pos, const double dE)
 {
-    analysisManager->FillH2(id_edepHisto, pos.z(), pos.x(), dE);
+    analysisManager->FillH2(id_edepHisto, pos.z() / CLHEP::mm, pos.x() / CLHEP::mm, dE / CLHEP::MeV);
 }
 
 void RootWriter::setPrimaryEnd(const G4ThreeVector pos)
 {
-    analysisManager->FillNtupleFColumn(id_tree, id_primaryEndX, pos.x());
-    analysisManager->FillNtupleFColumn(id_tree, id_primaryEndY, pos.y());
-    analysisManager->FillNtupleFColumn(id_tree, id_primaryEndZ, pos.z());
+    if (settings.minimalTreeForTransverseGammas)
+        return;
+    analysisManager->FillNtupleFColumn(id_tree, id_primaryEndX, pos.x() / CLHEP::mm);
+    analysisManager->FillNtupleFColumn(id_tree, id_primaryEndY, pos.y() / CLHEP::mm);
+    analysisManager->FillNtupleFColumn(id_tree, id_primaryEndZ, pos.z() / CLHEP::mm);
 }
 
 void RootWriter::addPositronEmitter(const G4ParticleDefinition* particleDefinition,
                                     const G4ThreeVector&        position,
                                     const G4double              time)
 {
+    if (settings.minimalTreeForTransverseGammas)
+        return;
     if (!particleDefinition)
         return;
 
@@ -119,10 +127,10 @@ void RootWriter::addPositronEmitter(const G4ParticleDefinition* particleDefiniti
 
     AVec.push_back(A);
     ZVec.push_back(Z);
-    xVec.push_back(position.x());
-    yVec.push_back(position.y());
-    zVec.push_back(position.z());
-    tVec.push_back(time);
+    xVec.push_back(position.x() / CLHEP::mm);
+    yVec.push_back(position.y() / CLHEP::mm);
+    zVec.push_back(position.z() / CLHEP::mm);
+    tVec.push_back(time / CLHEP::s);
 }
 
 void RootWriter::addEscapingParticle(const G4Step* step)
@@ -130,10 +138,18 @@ void RootWriter::addEscapingParticle(const G4Step* step)
     const auto postStepPoint = step->GetPostStepPoint();
 
     const auto pdg = step->GetTrack()->GetDefinition()->GetPDGEncoding();
+
+    if (settings.minimalTreeForTransverseGammas && pdg != 22)
+        return;
+
     const auto energy = step->GetPostStepPoint()->GetTotalEnergy() / CLHEP::MeV;
     const auto pos = postStepPoint->GetPosition() / CLHEP::mm;
     const auto mom = postStepPoint->GetMomentumDirection();
     const auto time = postStepPoint->GetGlobalTime() / CLHEP::second;
+
+    const auto theta = mom.theta();
+    if (settings.minimalTreeForTransverseGammas && (theta < 85 * CLHEP::deg || theta > 95 * CLHEP::deg))
+        return;
 
     pdgEscaping.push_back(pdg);
     eEscaping.push_back(energy);
@@ -143,7 +159,7 @@ void RootWriter::addEscapingParticle(const G4Step* step)
     yEscaping.push_back(pos.y());
     zEscaping.push_back(pos.z());
 
-    thetaEscaping.push_back(mom.theta());
+    thetaEscaping.push_back(theta);
     phiEscaping.push_back(mom.phi());
 
     const auto trackInfo = static_cast<const TrackInformation*>(step->GetTrack()->GetUserInformation());
@@ -157,13 +173,16 @@ void RootWriter::addEscapingParticle(const G4Step* step)
 
 void RootWriter::addBeamProperties(const CLHEP::Hep3Vector& pos, const CLHEP::Hep3Vector& mom, const G4double energy)
 {
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamPosX, pos.x());
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamPosY, pos.y());
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamPosZ, pos.z());
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamMomX, mom.x());
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamMomY, mom.y());
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamMomZ, mom.z());
-    analysisManager->FillNtupleFColumn(id_beamTree, id_beamEnergy, energy);
+    if (!settings.beamTree)
+        return;
+
+    analysisManager->FillNtupleFColumn(id_tree, id_beamPosX, pos.x() / CLHEP::mm);
+    analysisManager->FillNtupleFColumn(id_tree, id_beamPosY, pos.y() / CLHEP::mm);
+    analysisManager->FillNtupleFColumn(id_tree, id_beamPosZ, pos.z() / CLHEP::mm);
+    analysisManager->FillNtupleFColumn(id_tree, id_beamMomX, mom.x());
+    analysisManager->FillNtupleFColumn(id_tree, id_beamMomY, mom.y());
+    analysisManager->FillNtupleFColumn(id_tree, id_beamMomZ, mom.z());
+    analysisManager->FillNtupleFColumn(id_tree, id_beamEnergy, energy / CLHEP::MeV);
 }
 
 void RootWriter::addStepLength(const G4double stepLength)
@@ -173,17 +192,19 @@ void RootWriter::addStepLength(const G4double stepLength)
 
 void RootWriter::addNuclei(const G4ParticleDefinition* particleDefinition, const G4ThreeVector& position)
 {
+    if (settings.minimalTreeForTransverseGammas)
+        return;
+
     nucleiA.push_back(particleDefinition->GetBaryonNumber());
     nucleiZ.push_back(particleDefinition->GetAtomicNumber());
-    nucleiXPos.push_back(position.x());
-    nucleiYPos.push_back(position.y());
-    nucleiZPos.push_back(position.z());
+    nucleiXPos.push_back(position.x() / CLHEP::mm);
+    nucleiYPos.push_back(position.y() / CLHEP::mm);
+    nucleiZPos.push_back(position.z() / CLHEP::mm);
 }
 
 void RootWriter::fillTree()
 {
     analysisManager->AddNtupleRow(id_tree);
-    analysisManager->AddNtupleRow(id_beamTree);
 
     AVec.clear();
     ZVec.clear();

@@ -32,8 +32,17 @@ int main(int argc, char** argv)
     app.add_option("-b", settings.bodyWidth, "body width in cm")->default_val(15);
     app.add_option("-t", settings.nThreads, "number of threads")->default_val(1);
     app.add_flag("--omitNeutrons", settings.omitNeutrons, "do note write neutrons in file");
+    app.add_flag("--beamTree", settings.beamTree, "write beam tree");
+    app.add_flag("--minimalTree", settings.minimalTreeForTransverseGammas,
+                 "produce a minimal tree with only info about transverse gammas");
 
     CLI11_PARSE(app, argc, argv);
+
+    if (settings.minimalTreeForTransverseGammas)
+    {
+        settings.beamTree = false;
+        settings.omitNeutrons = true;
+    }
 
     G4Random::setTheSeed(settings.seed + 2);
 

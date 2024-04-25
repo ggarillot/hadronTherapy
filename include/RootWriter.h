@@ -2,13 +2,15 @@
 
 #include <G4AnalysisManager.hh>
 
+#include "Settings.h"
+
 class G4ParticleDefinition;
 class G4Step;
 
 class RootWriter
 {
   public:
-    RootWriter();
+    RootWriter(const Settings& settings);
     virtual ~RootWriter() = default;
 
     void openRootFile(const G4String& name = "test.root");
@@ -37,6 +39,8 @@ class RootWriter
     void createHistograms();
 
   protected:
+    Settings settings{};
+
     G4AnalysisManager* analysisManager = nullptr;
 
     G4int id_edepHisto{};
@@ -70,8 +74,6 @@ class RootWriter
     std::vector<float> nucleiXPos{};
     std::vector<float> nucleiYPos{};
     std::vector<float> nucleiZPos{};
-
-    G4int id_beamTree{};
 
     G4int id_beamPosX{};
     G4int id_beamPosY{};
